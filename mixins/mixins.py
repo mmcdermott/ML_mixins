@@ -141,7 +141,7 @@ class SwapcacheableMixin():
 
         seen_key = self._swapcache_has_key(key)
         if seen_key:
-            idx = next(i, for i, (k, t) in enumerate(self._seen_parameters) if k == key)
+            idx = next(i for i, (k, t) in enumerate(self._seen_parameters) if k == key)
         else:
             self._cache['keys'].append((key, time.time()))
             self._cache['values'].append({})

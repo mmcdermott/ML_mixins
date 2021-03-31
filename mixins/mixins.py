@@ -1,6 +1,8 @@
 import pickle, random
-from pathlib import Path
+
+from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Any
 
 try:
@@ -114,16 +116,15 @@ class TimeableMixin():
     _END_TIME = 'end'
 
     def _register_start(self, key):
-        if not hasattr(self, '_timings'): self._timings = {}
+        if not hasattr(self, '_timings'): self._timings = defaultdict(list)
 
-        if key not in self.timings: self.timings[key] = []
-        self.timings[key].append({self._START_TIME: time.time()})
+        self._timings[key].append({self._START_TIME: time.time()})
 
     def _register_end(self, key):
         assert hasattr(self, '_timings')
-        assert key in self.timings and len(self.timings[key]) > 0
-        assert self.timings[key][-1].get(self._END_TIME, None) is None
-        self.timings[key][-1][self._END_TIME] = time.time()
+        assert key in self._timings and len(self._timings[key]) > 0
+        assert self._timings[key][-1].get(self._END_TIME, None) is None
+        self._timings[key][-1][self._END_TIME] = time.time()
 
 class SwapcacheableMixin():
     def __init__(self, *args, **kwargs):

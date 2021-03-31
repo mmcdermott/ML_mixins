@@ -17,5 +17,7 @@ functionality to python objects for use in ML / data science. They currently inc
      settings A, and the class can present an interface of `[obj].stop_words`, `obj.ngram_range`,
      `obj.tfidf_vectorized_data`, but then this can be transparently updated to a different setting without
      discarding that data via the swapcache interface.
+  5. `TQDMableMixin`. This one adds a `_tqdm` method to a class which automatically progressbar-ifies ranges
+     for iteration, unless the range is sufficiently short or the class has `self.tqdm` set to `None`
 
 None of these are guaranteed to work or be useful at this point.

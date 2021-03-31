@@ -139,7 +139,7 @@ class SwapcacheableMixin():
     def _set_swapcache_key(self, key: Any):
         if key == self._front_cache_key: return
 
-        seen_key = any(k == key for k, t in self._cache['keys'])
+        seen_key = self._swapcache_has_key(key)
         if seen_key:
             idx = next(i, for i, (k, t) in enumerate(self._seen_parameters) if k == key)
         else:
@@ -158,6 +158,13 @@ class SwapcacheableMixin():
         self._front_cache_idx = idx
 
         self._update_front_attrs()
+
+    def _swapcache_has_key(self, key: Any) -> bool:
+        return any(k == key for k, t in self._cache['keys'])
+
+    def _swap_to_key(self, key: Any) -> None:
+        assert self._swapcache_has_key(key)
+        self._set_swapcache_key(key)
 
     def _update_front_attrs(self):
         # Set the new front-and-center attributes

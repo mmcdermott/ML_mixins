@@ -7,7 +7,7 @@ from typing import Optional, Any
 
 try:
     from pytorch_lightning import seed_everything
-except ImportError as e:
+except ModuleNotFoundError as e:
     import random, numpy as np
 
     def seed_everything(seed: Optional[int] = None, try_import_torch: Optional[bool] = True) -> int:
@@ -30,7 +30,7 @@ except ImportError as e:
                 import torch
                 torch.manual_seed(seed)
                 torch.cuda.manual_seed_all(seed)
-            except ImportError: pass
+            except ModuleNotFoundError: pass
 
         return seed
 

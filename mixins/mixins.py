@@ -148,8 +148,8 @@ class SwapcacheableMixin():
             self._cache['keys'].append((key, time.time()))
             self._cache['values'].append({})
 
-            self._cache['keys'] = self._cache['keys'][-self.cache_size:]
-            self._cache['values'] = self._cache['values'][-self.cache_size:]
+            self._cache['keys'] = self._cache['keys'][-self._cache_size:]
+            self._cache['values'] = self._cache['values'][-self._cache_size:]
 
             idx = -1
 

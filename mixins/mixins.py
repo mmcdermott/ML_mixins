@@ -1,7 +1,7 @@
 import pickle, random
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 try:
     from pytorch_lightning import seed_everything

@@ -171,12 +171,12 @@ class SwapcacheableMixin():
         # Set the new front-and-center attributes
         for key, val in self._cache['values'][self._front_cache_idx].items(): setattr(self, key, val)
 
-    def _update_swapcache_key_and_swap(key: Any, values_dict: dict):
+    def _update_swapcache_key_and_swap(self, key: Any, values_dict: dict):
         assert key is not None
 
         self._set_swapcache_key(key)
         self._cache['values'][self._front_cache_idx].update(values_dict)
         self._update_front_attrs()
 
-    def _update_current_swapcache_key(values_dict: dict):
+    def _update_current_swapcache_key(self, values_dict: dict):
         self._update_swapcache_key_and_swap(self._front_cache_key, values_dict)

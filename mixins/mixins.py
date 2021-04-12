@@ -1,9 +1,27 @@
-import pickle, random, time
+import functools, pickle, random, time
 
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Any
+
+def doublewrap(f):
+    '''
+    a decorator decorator, allowing the decorator to be used as:
+    @decorator(with, arguments, and=kwargs)
+    or
+    @decorator
+    '''
+    @functools.wraps(f)
+    def new_dec(*args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+            # actual decorated function
+            return f(args[0])
+        else:
+            # decorator arguments
+            return lambda realf: f(realf, *args, **kwargs)
+
+    return new_dec
 
 try:
     from pytorch_lightning import seed_everything
@@ -77,6 +95,16 @@ class SeedableMixin():
         seed_everything(seed)
         return seed
 
+    @staticmethod
+    @doublewrap
+    def WithSeed(fn, key: Optional[str] = None):
+        if key is None: key = fn.__name__
+        @functools.wraps(fn)
+        def wrapper_seeding(self, *args, seed: Optional[int] = None, **kwargs):
+            self._seed(seed=seed, key=key)
+            return fn(self, *args, **kwargs)
+        return wrapper_seeding
+
 class SaveableMixin():
     _DEL_BEFORE_SAVING_ATTRS = []
 
@@ -124,6 +152,18 @@ class TimeableMixin():
         assert key in self._timings and len(self._timings[key]) > 0
         assert self._timings[key][-1].get(self._END_TIME, None) is None
         self._timings[key][-1][self._END_TIME] = time.time()
+
+    @staticmethod
+    @doublewrap
+    def TimeAs(fn, key: Optional[str] = None):
+        if key is None: key = fn.__name__
+        @functools.wraps(fn)
+        def wrapper_timing(self, *args, seed: Optional[int] = None, **kwargs):
+            self._register_start(key=key)
+            out = fn(self, *args, **kwargs)
+            self._register_end(key=key)
+            return out
+        return wrapper_timing
 
 class SwapcacheableMixin():
     def __init__(self, *args, **kwargs):

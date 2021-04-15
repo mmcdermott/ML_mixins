@@ -5,6 +5,31 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Any
 
+import random, numpy as np
+
+def seed_everything(seed: Optional[int] = None, try_import_torch: Optional[bool] = True) -> int:
+    max_seed_value = np.iinfo(np.uint32).max
+    min_seed_value = np.iinfo(np.uint32).min
+
+    try:
+        if seed is None: seed = os.environ.get("PL_GLOBAL_SEED")
+        seed = int(seed)
+    except (TypeError, ValueError):
+        seed = np.random.randint(min_seed_value, max_seed_value)
+
+    assert (min_seed_value <= seed <= max_seed_value)
+
+    random.seed(seed)
+    np.random.seed(seed)
+    if try_import_torch:
+        try:
+            import torch
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+        except ModuleNotFoundError: pass
+
+    return seed
+
 def doublewrap(f):
     '''
     a decorator decorator, allowing the decorator to be used as:
@@ -22,35 +47,6 @@ def doublewrap(f):
             return lambda realf: f(realf, *args, **kwargs)
 
     return new_dec
-
-try:
-    from pytorch_lightning import seed_everything
-except ModuleNotFoundError as e:
-    import random, numpy as np
-
-    def seed_everything(seed: Optional[int] = None, try_import_torch: Optional[bool] = True) -> int:
-        max_seed_value = np.iinfo(np.uint32).max
-        min_seed_value = np.iinfo(np.uint32).min
-
-        try:
-            if seed is None: seed = os.environ.get("PL_GLOBAL_SEED")
-            seed = int(seed)
-        except (TypeError, ValueError):
-            seed = np.random.randint(min_seed_value, max_seed_value)
-            print(f"No correct seed found, seed set to {seed}")
-
-        assert (min_seed_value <= seed <= max_seed_value)
-
-        random.seed(seed)
-        np.random.seed(seed)
-        if try_import_torch:
-            try:
-                import torch
-                torch.manual_seed(seed)
-                torch.cuda.manual_seed_all(seed)
-            except ModuleNotFoundError: pass
-
-        return seed
 
 try:
     from tqdm.auto import tqdm

@@ -75,9 +75,9 @@ try:
 except ImportError as e: pass
 
 class SeedableMixin():
-    def _last_seed(self, name: str):
-        for idx, (s, n, time) in enumerate(self._past_seeds[::-1]):
-            if n == name:
+    def _last_seed(self, key: str):
+        for idx, (s, k, time) in enumerate(self._past_seeds[::-1]):
+            if k == key:
                 idx = len(self._past_seeds) - 1 - idx
                 return idx, s
 

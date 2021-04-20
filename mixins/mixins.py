@@ -172,7 +172,7 @@ class SwapcacheableMixin():
         if not hasattr(self, '_front_cache_key'): self._front_cache_key = None
         if not hasattr(self, '_front_cache_idx'): self._front_cache_idx = None
 
-    def _set_swapcache_key(self, key: Any):
+    def _set_swapcache_key(self, key: Any) -> None:
         self._init_attrs()
         if key == self._front_cache_key: return
 

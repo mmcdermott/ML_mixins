@@ -138,6 +138,11 @@ class TimeableMixin():
     _START_TIME = 'start'
     _END_TIME = 'end'
 
+    def _time_so_far(self, key):
+        assert hasattr(self, '_timings') and key in self._timings
+        assert self._END_TIME not in self._timings[key][-1], f"{key} is not currently being timed!"
+        return time.time() - self._timings[key][-1][self._START_TIME]
+
     def _register_start(self, key):
         if not hasattr(self, '_timings'): self._timings = defaultdict(list)
 

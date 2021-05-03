@@ -1,9 +1,10 @@
 import functools, pickle, random, time
 
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional, Any, List
 
 import random, numpy as np
 
@@ -138,21 +139,39 @@ class TimeableMixin():
     _START_TIME = 'start'
     _END_TIME = 'end'
 
-    def _time_so_far(self, key):
-        assert hasattr(self, '_timings') and key in self._timings
+    def __assert_key_exists(self, key: str) -> None:
+        assert hasattr(self, '_timings') and key in self._timings, f"{key} should exist in self._timings!"
+
+    def _times_for(self, key: str) -> List[float]:
+        self.__assert_key_exists(key)
+        return [
+            t[self._END_TIME] - t[self._START_TIME] for t in self._timings[key] \
+                if self._START_TIME in t and self._END_TIME in t
+        ]
+
+    def _time_so_far(self, key: str) -> float:
+        self.__assert_key_exists(key)
         assert self._END_TIME not in self._timings[key][-1], f"{key} is not currently being timed!"
         return time.time() - self._timings[key][-1][self._START_TIME]
 
-    def _register_start(self, key):
+    def _register_start(self, key: str) -> None:
         if not hasattr(self, '_timings'): self._timings = defaultdict(list)
 
         self._timings[key].append({self._START_TIME: time.time()})
 
-    def _register_end(self, key):
+    def _register_end(self, key: str) -> None:
         assert hasattr(self, '_timings')
         assert key in self._timings and len(self._timings[key]) > 0
         assert self._timings[key][-1].get(self._END_TIME, None) is None
         self._timings[key][-1][self._END_TIME] = time.time()
+
+    @contextmanager
+    def _time_as(self, key: str):
+        self._register_start(key)
+        try:
+            yield
+        finally:
+            self._register_end(key)
 
     @staticmethod
     @doublewrap

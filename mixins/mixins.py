@@ -1,12 +1,12 @@
-import functools, pickle, random, time
+from __future__ import annotations
+
+import functools, pickle, random, time, numpy as np
 
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
-
-import random, numpy as np
 
 def seed_everything(seed: Optional[int] = None, try_import_torch: Optional[bool] = True) -> int:
     max_seed_value = np.iinfo(np.uint32).max

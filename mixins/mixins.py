@@ -56,7 +56,7 @@ try:
         _SKIP_TQDM_IF_LE = 3
 
         def __init__(self, *args, **kwargs):
-            if not hasattr(self, 'tqdm'): self.tqdm = kwargs.get('tqdm', tqdm)
+            self.tqdm = kwargs.get('tqdm', tqdm)
 
         def _tqdm(self, rng, **kwargs):
             if not hasattr(self, 'tqdm'): self.tqdm = tqdm
@@ -103,6 +103,9 @@ try:
 except ImportError as e: pass
 
 class SeedableMixin():
+    def __init__(self, *args, **kwargs):
+        self._past_seeds = kwargs.get('_past_seeds', [])
+
     def _last_seed(self, key: str):
         for idx, (s, k, time) in enumerate(self._past_seeds[::-1]):
             if k == key:
@@ -137,7 +140,7 @@ class SaveableMixin():
     _DEL_BEFORE_SAVING_ATTRS = []
 
     def __init__(self, *args, **kwargs):
-        if not hasattr(self, 'do_overwrite'): self.do_overwrite = kwargs.get('do_overwrite', False)
+        self.do_overwrite = kwargs.get('do_overwrite', False)
 
     @staticmethod
     def _load(filepath: Path, **add_kwargs) -> None:
@@ -169,6 +172,8 @@ class SaveableMixin():
 class TimeableMixin():
     _START_TIME = 'start'
     _END_TIME = 'end'
+    def __init__(self, *args, **kwargs):
+        self._timings = kwargs.get('_timings', defaultdict(list))
 
     def __assert_key_exists(self, key: str) -> None:
         assert hasattr(self, '_timings') and key in self._timings, f"{key} should exist in self._timings!"
@@ -218,7 +223,7 @@ class TimeableMixin():
 
 class SwapcacheableMixin():
     def __init__(self, *args, **kwargs):
-        if not hasattr(self, '_cache_size'): self._cache_size = kwargs.get('cache_size', 5)
+        self._cache_size = kwargs.get('cache_size', 5)
 
     def _init_attrs(self):
         if not hasattr(self, '_cache'): self._cache = {'keys': [], 'values': []}

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import functools, pickle, random, time, numpy as np
+import functools, inspect, pickle, random, time, numpy as np
 
 from collections import defaultdict
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -281,3 +282,30 @@ class SwapcacheableMixin():
     def _update_current_swapcache_key(self, values_dict: dict):
         self._init_attrs()
         self._update_swapcache_key_and_swap(self._front_cache_key, values_dict)
+
+class DebuggerMixin:
+    @property
+    def _do_debug(self):
+        if hasattr(self, 'do_debug'): return self.do_debug
+        else: return False
+
+    @staticmethod
+    @doublewrap
+    def CaptureErrorState(fn, store_global: Optional[bool] = None, filepath: Optional[Path] = None):
+        if store_global is None: store_global = (filepath is None)
+
+        @functools.wraps(fn)
+        def debugging_wrapper(self, *args, seed: Optional[int] = None, **kwargs):
+            if not self._do_debug: return fn(self, *args, **kwargs)
+            
+            try:
+                return fn(self, *args, **kwargs)
+            except Exception as e:
+                new_vars = deepcopy(inspect.trace()[-1][0].f_locals)
+                if store_global:
+                    globals()["_DEBUGGER_VARS"] = new_vars
+                if filepath:
+                    with open(filepath, mode='wb') as f:
+                        pickle.dump(new_vars, f)
+                raise
+        return debugging_wrapper

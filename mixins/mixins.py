@@ -303,7 +303,7 @@ class DebuggerMixin:
             except Exception as e:
                 new_vars = deepcopy(inspect.trace()[-1][0].f_locals)
                 if store_global:
-                    globals()["_DEBUGGER_VARS"] = new_vars
+                    __builtins__["_DEBUGGER_VARS"] = new_vars
                 if filepath:
                     with open(filepath, mode='wb') as f:
                         pickle.dump(new_vars, f)

@@ -301,7 +301,11 @@ class DebuggerMixin:
             try:
                 return fn(self, *args, **kwargs)
             except Exception as e:
-                new_vars = deepcopy(inspect.trace()[-1][0].f_locals)
+                T = inspect.trace()
+                for t in T:
+                    if t[3] == fn.__name__: break
+                        
+                new_vars = deepcopy(t[0].f_locals)
                 if store_global:
                     __builtins__["_DEBUGGER_VARS"] = new_vars
                 if filepath:

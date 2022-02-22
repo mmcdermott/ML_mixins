@@ -297,14 +297,14 @@ class DebuggerMixin:
         @functools.wraps(fn)
         def debugging_wrapper(self, *args, seed: Optional[int] = None, **kwargs):
             if not self._do_debug: return fn(self, *args, **kwargs)
-            
+
             try:
                 return fn(self, *args, **kwargs)
             except Exception as e:
                 T = inspect.trace()
                 for t in T:
                     if t[3] == fn.__name__: break
-                        
+
                 new_vars = deepcopy(t[0].f_locals)
                 if store_global:
                     __builtins__["_DEBUGGER_VARS"] = new_vars
@@ -313,3 +313,27 @@ class DebuggerMixin:
                         pickle.dump(new_vars, f)
                 raise
         return debugging_wrapper
+
+from multiprocessing import Pool
+
+class MultiprocessingMixin:
+    def __init__(self, *args, multiprocessing_pool_size: Optional[int] = None, **kwargs):
+        self.multiprocessing_pool_size = multiprocessing_pool_size
+
+    @property
+    def _multiprocessing_pool_size(self):
+        if hasattr(self, 'multiprocessing_pool_size'): return self.multiprocessing_pool_size
+        else: return None
+
+    @property
+    def _use_multiprocessing(self):
+        return (self._multiprocessing_pool_size is not None and self._multiprocessing_pool_size > 1)
+
+    # TODO(mmd): Typing
+    def _map(self, fn, iterable, tqdm=None, **tqdm_kwargs):
+        if self._use_multiprocessing:
+            with Pool(self._multiprocessing_pool_size) as p: 
+                if tqdm is None: return p.map(fn, iterable)
+                else: return list(tqdm(p.imap(fn, iterable), **tqdm_kwargs))
+        elif tqdm is None: return [fn(x) for x in iterable]
+        else: return [fn(x) for x in tqdm(iterable, **tqdm_kwargs)]

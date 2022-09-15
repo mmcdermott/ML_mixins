@@ -3,7 +3,7 @@ sys.path.append('..')
 
 import unittest
 
-from mixins.mixins import *
+from mixins import SwapcacheableMixin
 
 class TestSwapcacheableMixin(unittest.TestCase):
     def test_constructs(self):

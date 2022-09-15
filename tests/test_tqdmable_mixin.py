@@ -3,7 +3,7 @@ sys.path.append('..')
 
 import unittest
 
-from mixins.mixins import *
+from mixins import TQDMableMixin
 
 class TestTQDMableMixin(unittest.TestCase):
     def test_constructs(self):

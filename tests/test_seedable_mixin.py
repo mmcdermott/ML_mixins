@@ -5,7 +5,7 @@ import unittest
 
 import random, numpy as np
 
-from mixins.mixins import *
+from mixins import SeedableMixin
 
 class SeedableDerived(SeedableMixin):
     def __init__(self):

@@ -3,10 +3,9 @@ sys.path.append('..')
 
 import unittest
 
-from mixins.mixins import *
-
 try:
     import torch
+    from mixins import TensorableMixin
 
     class TestTensorableMixin(unittest.TestCase):
         def test_constructs(self):

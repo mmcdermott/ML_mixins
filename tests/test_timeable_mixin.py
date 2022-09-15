@@ -3,7 +3,7 @@ sys.path.append('..')
 
 import unittest
 
-from mixins.mixins import *
+from mixins import TimeableMixin
 
 class TimeableDerived(TimeableMixin):
     def __init__(self):

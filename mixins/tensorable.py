@@ -2,11 +2,11 @@ from __future__ import annotations
 
 try:
     import torch, numpy as np
-    from typing import Dict, Optional, Tuple, Union
+    from typing import Dict, Hashable, List, Optional, Tuple, Union
 
     class TensorableMixin():
-        Tensorable_T = Union[np.ndarray, List[float], Tuple['Tensorable_T'], Dict[Any, 'Tensorable_T']]
-        Tensor_T = Union[torch.Tensor, Tuple['Tensor_T'], Dict[Any, 'Tensor_T']]
+        Tensorable_T = Union[np.ndarray, List[float], Tuple['Tensorable_T'], Dict[Hashable, 'Tensorable_T']]
+        Tensor_T = Union[torch.Tensor, Tuple['Tensor_T'], Dict[Hashable, 'Tensor_T']]
 
         def __init__(self, *args, **kwargs):
             self.do_cuda = kwargs.get('do_cuda', torch.cuda.is_available)

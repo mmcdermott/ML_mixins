@@ -14,7 +14,7 @@ class SaveableMixin():
     @staticmethod
     def _load(filepath: Path, **add_kwargs) -> None:
         assert filepath.is_file(), f"Missing filepath {filepath}!"
-        with open(fp, mode='rb') as f: obj = pickle.load(f)
+        with open(filepath, mode='rb') as f: obj = pickle.load(f)
 
         for a, v in add_kwargs.items(): setattr(obj, a, v)
         obj._post_load(add_kwargs)
@@ -34,6 +34,6 @@ class SaveableMixin():
         for attr in self._DEL_BEFORE_SAVING_ATTRS:
             if hasattr(self, attr): skipped_attrs[attr] = self.__dict__.pop(attr)
 
-        with open(fp, mode='wb') as f: pickle.dump(self, f)
+        with open(filepath, mode='wb') as f: pickle.dump(self, f)
 
         for attr, val in skipped_attrs.items(): setattr(self, attr, val)

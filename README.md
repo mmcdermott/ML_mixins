@@ -1,4 +1,16 @@
 # ML Mixins
+## Installation
+this package can be installed via [`pip`](https://pypi.org/project/ml-mixins/):
+```
+pip install ml-mixins
+```
+Then
+```
+from mixins import SeedableMixin
+...
+```
+
+## Description
 Useful Python Mixins for ML. These are python mixin classes that can be used to add useful bits of discrete
 functionality to python objects for use in ML / data science. They currently include:
   1. `SeedableMixin` which adds nice seeding capabilities, including functions to seed various stages of

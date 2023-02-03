@@ -1,15 +1,41 @@
 from __future__ import annotations
 
-import functools, time
+import functools, time, numpy as np
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Set, Tuple
 
 from .utils import doublewrap
 
 class TimeableMixin():
     _START_TIME = 'start'
     _END_TIME = 'end'
+
+    _CUTOFFS_AND_UNITS = [
+        (1000, 'ms'),
+        (60, 'sec'),
+        (60, 'min'),
+        (24, 'hour'),
+        (7, 'days'),
+        (None, 'weeks')
+    ]
+
+    @classmethod
+    def _get_pprint_num_unit(cls, seconds: float) -> Tuple[float, str]:
+        ms = seconds * 1000
+        upper_bound = 1
+        for upper_bound_factor, unit in cls._CUTOFFS_AND_UNITS:
+            if upper_bound_factor is None or ms < upper_bound * upper_bound_factor: return ms / upper_bound, unit
+            upper_bound *= upper_bound_factor
+
+    @classmethod
+    def _pprint_duration(cls, mean_sec: float, std_seconds: Optional[float] = None) -> str:
+        mean_time, mean_unit = cls._get_pprint_num_unit(mean_sec)
+        if std_seconds:
+            std_time = std_seconds * mean_time/mean_sec
+            return f"{mean_time:.1f} ± {std_time:.1f} {mean_unit}"
+        else: return f"{mean_time:.1f} {mean_unit}"
+
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get('_timings', defaultdict(list))
 
@@ -58,3 +84,27 @@ class TimeableMixin():
             self._register_end(key=key)
             return out
         return wrapper_timing
+
+    @property
+    def _duration_stats(self): 
+        out = {}
+        for k in self._timings:
+            arr = np.array(self._times_for(k))
+            out[k] = (arr.mean(), arr.std())
+        return out
+
+    def _profile_durations(self, only_keys: Optional[Set[str]] = None):
+        stats = self._duration_stats
+
+        if only_keys is not None:
+            stats = {k: v for k, v in stats.items() if k in only_keys}
+
+        longest_key_length = max(len(k) for k in stats)
+        ordered_keys = sorted(stats.keys(), key=lambda k: stats[k][0])
+        tfk_str = '\n'.join(
+            (
+                f"{k}:{' '*(longest_key_length - len(k))} "
+                f"{self._pprint_duration(*stats[k])}"
+            ) for k in ordered_keys
+        )
+        return tfk_str

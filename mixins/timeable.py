@@ -29,12 +29,16 @@ class TimeableMixin():
             upper_bound *= upper_bound_factor
 
     @classmethod
-    def _pprint_duration(cls, mean_sec: float, std_seconds: Optional[float] = None) -> str:
+    def _pprint_duration(cls, mean_sec: float, n_times: int = 1, std_seconds: Optional[float] = None) -> str:
         mean_time, mean_unit = cls._get_pprint_num_unit(mean_sec)
+
         if std_seconds:
             std_time = std_seconds * mean_time/mean_sec
-            return f"{mean_time:.1f} ± {std_time:.1f} {mean_unit}"
-        else: return f"{mean_time:.1f} {mean_unit}"
+            mean_std_str = f"{mean_time:.1f} ± {std_time:.1f} {mean_unit}"
+        else: mean_std_str = f"{mean_time:.1f} {mean_unit}"
+
+        if n_times > 1: return f"{mean_std_str} (x{n_times})"
+        else: return mean_std_str
 
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get('_timings', defaultdict(list))
@@ -90,7 +94,7 @@ class TimeableMixin():
         out = {}
         for k in self._timings:
             arr = np.array(self._times_for(k))
-            out[k] = (arr.mean(), arr.std())
+            out[k] = (arr.mean(), len(arr), arr.std())
         return out
 
     def _profile_durations(self, only_keys: Optional[Set[str]] = None):
@@ -100,7 +104,7 @@ class TimeableMixin():
             stats = {k: v for k, v in stats.items() if k in only_keys}
 
         longest_key_length = max(len(k) for k in stats)
-        ordered_keys = sorted(stats.keys(), key=lambda k: stats[k][0])
+        ordered_keys = sorted(stats.keys(), key=lambda k: stats[k][0] * stats[k][1])
         tfk_str = '\n'.join(
             (
                 f"{k}:{' '*(longest_key_length - len(k))} "

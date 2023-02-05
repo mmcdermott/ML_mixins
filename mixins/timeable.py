@@ -12,6 +12,7 @@ class TimeableMixin():
     _END_TIME = 'end'
 
     _CUTOFFS_AND_UNITS = [
+        (1000, 'μs'),
         (1000, 'ms'),
         (60, 'sec'),
         (60, 'min'),
@@ -21,11 +22,24 @@ class TimeableMixin():
     ]
 
     @classmethod
-    def _get_pprint_num_unit(cls, seconds: float) -> Tuple[float, str]:
-        ms = seconds * 1000
+    def _get_pprint_num_unit(cls, x: float, x_unit: str = 'sec') -> Tuple[float, str]:
+        x_unit_factor = 1
+        for fac, unit in cls._CUTOFFS_AND_UNITS:
+            if unit == x_unit: break
+            if fac is None:
+                raise LookupError(
+                    f"Passed unit {x_unit} invalid! "
+                    f"Must be one of {', '.join(u for f, u in cls._CUTOFFS_AND_UNITS)}."
+                )
+            x_unit_factor *= fac
+
+        min_unit = x * x_unit_factor
         upper_bound = 1
         for upper_bound_factor, unit in cls._CUTOFFS_AND_UNITS:
-            if upper_bound_factor is None or ms < upper_bound * upper_bound_factor: return ms / upper_bound, unit
+            if (
+                (upper_bound_factor is None) or
+                (min_unit < upper_bound * upper_bound_factor)
+            ): return min_unit / upper_bound, unit
             upper_bound *= upper_bound_factor
 
     @classmethod

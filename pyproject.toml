@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ml_mixins"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Matthew B. A. McDermott", email="mattmcdermott8@gmail.com" },
 ]
 description = "A colleciton of useful mixins for machine learning development code."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

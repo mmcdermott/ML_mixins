@@ -12,7 +12,7 @@ class TensorableMixin:
     Tensor_T = Union[torch.Tensor, tuple["Tensor_T"], dict[Hashable, "Tensor_T"]]
 
     def __init__(self, *args, **kwargs):
-        self.do_cuda = kwargs.get("do_cuda", torch.cuda.is_available)
+        self.do_cuda = kwargs.get("do_cuda", torch.cuda.is_available())
 
     def _cuda(self, T: torch.Tensor, do_cuda: bool | None = None):
         if do_cuda is None:

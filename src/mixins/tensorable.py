@@ -16,7 +16,7 @@ class TensorableMixin:
 
     def _cuda(self, T: torch.Tensor, do_cuda: bool | None = None):
         if do_cuda is None:
-            do_cuda = self.do_cuda if hasattr(self, "do_cuda") else torch.cuda.is_available
+            do_cuda = self.do_cuda if hasattr(self, "do_cuda") else torch.cuda.is_available()
 
         return T.cuda() if do_cuda else T
 

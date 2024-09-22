@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=64", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ml_mixins"
-version = "0.0.6"
+dynamic = ["version"]
 authors = [
   { name="Matthew B. A. McDermott", email="mattmcdermott8@gmail.com" },
 ]
@@ -16,6 +16,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+dev = ["pre-commit"]
+tests = ["pytest", "pytest-cov"]
+tqdmable = ["tqdm"]
+tensorable = ["torch"]
+
+[tool.setuptools_scm]
 
 [project.urls]
 "Homepage" = "https://github.com/mmcdermott/ML_mixins"

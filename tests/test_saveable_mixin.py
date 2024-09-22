@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory

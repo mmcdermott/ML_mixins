@@ -1,7 +1,6 @@
-import sys, time, numpy as np
-sys.path.append('..')
-
 import unittest
+import time
+import numpy as np
 
 from mixins import TimeableMixin
 

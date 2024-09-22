@@ -17,13 +17,15 @@ __all__ = [
 # Tensorable and Tqdmable rely on packages that may or may not be installed.
 
 try:
-    from .tensorable import TensorableMixin
+    from .tensorable import TensorableMixin  # noqa
+
     __all__.append("TensorableMixin")
-except ImportError as e:
+except ImportError:
     pass
 
 try:
-    from .tqdmable import TQDMableMixin
+    from .tqdmable import TQDMableMixin  # noqa
+
     __all__.append("TQDMableMixin")
-except ImportError as e:
+except ImportError:
     pass

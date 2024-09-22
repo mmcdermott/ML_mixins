@@ -1,14 +1,12 @@
 import unittest
 
-try:
-    import torch
-    from mixins import TensorableMixin
+from mixins import TensorableMixin
 
-    class TestTensorableMixin(unittest.TestCase):
-        def test_constructs(self):
-            T = TensorableMixin()
 
-except ImportError: pass
+class TestTensorableMixin(unittest.TestCase):
+    def test_constructs(self):
+        TensorableMixin()
 
-if __name__ == '__main__': unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

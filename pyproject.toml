@@ -22,6 +22,7 @@ dependencies = ["numpy"]
 dev = ["pre-commit"]
 tests = ["pytest", "pytest-cov"]
 tqdmable = ["tqdm"]
+tensorable = ["torch"]
 
 [tool.setuptools_scm]
 

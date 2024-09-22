@@ -1,12 +1,14 @@
+import random
 import unittest
 
-import random, numpy as np
+import numpy as np
 
 from mixins import SeedableMixin
 
+
 class SeedableDerived(SeedableMixin):
     def __init__(self):
-        self.foo = 'foo'
+        self.foo = "foo"
         # Doesn't call super().__init__()! Should still work in this case.
 
     def gen_random_num(self):
@@ -21,21 +23,21 @@ class SeedableDerived(SeedableMixin):
     def decorated_auto_key(self):
         return random.random()
 
+
 class TestSeedableMixin(unittest.TestCase):
     def test_constructs(self):
-        T = SeedableMixin()
-        T = SeedableDerived()
+        SeedableMixin()
+        SeedableDerived()
 
     def test_responds_to_methods(self):
         T = SeedableMixin()
 
         T._seed()
-        T._last_seed('foo')
+        T._last_seed("foo")
 
         T = SeedableDerived()
         T._seed()
-        T._last_seed('foo')
-
+        T._last_seed("foo")
 
     def test_seeding_freezes_randomness(self):
         T = SeedableDerived()
@@ -93,7 +95,6 @@ class TestSeedableMixin(unittest.TestCase):
         self.assertEqual(seeded_1_1, seeded_1_3)
         self.assertEqual(seeded_2_1, seeded_2_3)
 
-
     def test_seeds_follow_consistent_sequence(self):
         T = SeedableDerived()
 
@@ -119,12 +120,12 @@ class TestSeedableMixin(unittest.TestCase):
     def test_get_last_seed(self):
         T = SeedableDerived()
 
-        key = 'key'
-        non_key = 'not_key'
+        key = "key"
+        non_key = "not_key"
 
         seed_key_early = 1
-        seed_key_late  = 1
-        seed_non_key   = 2
+        seed_key_late = 1
+        seed_non_key = 2
 
         T._seed()
 
@@ -142,5 +143,6 @@ class TestSeedableMixin(unittest.TestCase):
         self.assertEqual(idx, 4)
         self.assertEqual(seed, seed_key_late)
 
-if __name__ == '__main__': unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

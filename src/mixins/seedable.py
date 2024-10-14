@@ -7,6 +7,11 @@ from datetime import datetime
 
 import numpy as np
 
+_SEED_FUNCTIONS = {
+    "numpy": np.random.seed,
+    "random": random.seed,
+}
+
 try:
     import torch
 
@@ -14,16 +19,15 @@ try:
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
+    _SEED_FUNCTIONS["torch"] = seed_torch
 except ModuleNotFoundError:
-
-    def seed_torch(seed: int):
-        pass
+    pass
 
 
 from .utils import doublewrap
 
 
-def seed_everything(seed: int | None = None) -> int:
+def seed_everything(seed: int | None = None, seed_engines: set[str] | None = None) -> int:
     """A simple helper function to seed everything that needs to be seeded.
 
     Args:
@@ -55,18 +59,19 @@ def seed_everything(seed: int | None = None) -> int:
         0
     """
 
-    try:
-        if seed is None:
-            seed = os.environ.get("PL_GLOBAL_SEED")
-        seed = int(seed)
-    except (TypeError, ValueError):
-        max_seed_value = np.iinfo(np.uint32).max
-        min_seed_value = np.iinfo(np.uint32).min
-        seed = np.random.randint(min_seed_value, max_seed_value)
+    if seed_engines is None:
+        seed_engines = set(_SEED_FUNCTIONS.keys())
 
-    random.seed(seed)
-    np.random.seed(seed)
-    seed_torch(seed)
+    if seed is None:
+        if "PL_GLOBAL_SEED" in os.environ:
+            seed = int(os.environ["PL_GLOBAL_SEED"])
+        else:
+            max_seed_value = np.iinfo(np.uint32).max
+            min_seed_value = np.iinfo(np.uint32).min
+            seed = np.random.randint(min_seed_value, max_seed_value)
+
+    for s in seed_engines:
+        _SEED_FUNCTIONS[s](seed)
 
     return seed
 
@@ -82,6 +87,7 @@ class SeedableMixin:
 
     def __init__(self, *args, **kwargs):
         self._past_seeds = kwargs.get("_past_seeds", [])
+        self._seed_engines = kwargs.get("_seed_engines", set(_SEED_FUNCTIONS.keys()))
 
     def _last_seed(self, key: str) -> tuple[int, int | None]:
         """This returns the most recently used seed with a given key.
@@ -164,7 +170,7 @@ class SeedableMixin:
         else:
             self._past_seeds = [(self.seed, key, time)]
 
-        seed_everything(seed)
+        seed_everything(seed, getattr(self, "_seed_engines", None))
         return seed
 
     @staticmethod

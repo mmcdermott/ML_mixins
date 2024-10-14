@@ -1,8 +1,17 @@
+import os
 import random
 
 import numpy as np
 
 from mixins import SeedableMixin
+from mixins.seedable import seed_everything
+
+try:
+    pass
+
+    raise ImportError("This test requires torch not to be installed to run.")
+except (ImportError, ModuleNotFoundError):
+    pass
 
 
 class SeedableDerived(SeedableMixin):
@@ -21,6 +30,65 @@ class SeedableDerived(SeedableMixin):
     @SeedableMixin.WithSeed
     def decorated_auto_key(self):
         return random.random()
+
+
+def test_benchmark_seed_everything(benchmark):
+    benchmark(seed_everything)
+
+
+def test_benchmark_seed_everything_with_seed(benchmark):
+    benchmark(seed_everything, 1)
+
+
+def test_benchmark_seed_everything_with_env(benchmark):
+    os.environ["PL_GLOBAL_SEED"] = "1"
+    benchmark(seed_everything)
+
+
+def test_seed_everything():
+    os.environ["PL_GLOBAL_SEED"] = "1"
+    seed_everything()
+
+    rand_1 = random.randint(0, 10)
+    np_rand_1 = np.random.randint(0, 10)
+    rand_2 = random.randint(0, 10)
+    np_rand_2 = np.random.randint(0, 10)
+
+    seed_everything(1)
+    rand_1_1 = random.randint(0, 10)
+    np_rand_1_1 = np.random.randint(0, 10)
+    rand_2_1 = random.randint(0, 10)
+    np_rand_2_1 = np.random.randint(0, 10)
+
+    seed_everything(1, seed_engines={"random"})
+    rand_1_2 = random.randint(0, 10)
+    np_rand_1_2 = np.random.randint(0, 10)
+    rand_2_2 = random.randint(0, 10)
+    np_rand_2_2 = np.random.randint(0, 10)
+
+    seed_everything(1, seed_engines={"numpy"})
+    rand_1_3 = random.randint(0, 10)
+    np_rand_1_3 = np.random.randint(0, 10)
+    rand_2_3 = random.randint(0, 10)
+    np_rand_2_3 = np.random.randint(0, 10)
+
+    assert rand_1 == rand_1_1
+    assert rand_1 == rand_1_2
+    assert rand_1 != rand_1_3
+    assert rand_1 != rand_2
+
+    assert np_rand_1 == np_rand_1_1
+    assert np_rand_1 == np_rand_1_3
+    assert np_rand_1 != np_rand_1_2
+    assert np_rand_1 != np_rand_2
+
+    assert rand_2 == rand_2_1
+    assert rand_2 == rand_2_2
+    assert rand_2 != rand_2_3
+
+    assert np_rand_2 == np_rand_2_1
+    assert np_rand_2 == np_rand_2_3
+    assert np_rand_2 != np_rand_2_2
 
 
 def test_constructs():

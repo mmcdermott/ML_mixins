@@ -44,7 +44,7 @@ def test_responds_to_methods():
 def test_benchmark_timing(benchmark):
     T = TimeableDerived()
 
-    benchmark(T.decorated_takes_time, 0.001)
+    benchmark(T.decorated_takes_time, 0.00001)
 
 
 def test_pprint_num_unit():

@@ -49,28 +49,28 @@ def test_seed_everything():
     os.environ["PL_GLOBAL_SEED"] = "1"
     seed_everything()
 
-    rand_1 = random.randint(0, 10)
-    np_rand_1 = np.random.randint(0, 10)
-    rand_2 = random.randint(0, 10)
-    np_rand_2 = np.random.randint(0, 10)
+    rand_1 = random.randint(0, 100000000)
+    np_rand_1 = np.random.randint(0, 100000000)
+    rand_2 = random.randint(0, 100000000)
+    np_rand_2 = np.random.randint(0, 100000000)
 
     seed_everything(1)
-    rand_1_1 = random.randint(0, 10)
-    np_rand_1_1 = np.random.randint(0, 10)
-    rand_2_1 = random.randint(0, 10)
-    np_rand_2_1 = np.random.randint(0, 10)
+    rand_1_1 = random.randint(0, 100000000)
+    np_rand_1_1 = np.random.randint(0, 100000000)
+    rand_2_1 = random.randint(0, 100000000)
+    np_rand_2_1 = np.random.randint(0, 100000000)
 
     seed_everything(1, seed_engines={"random"})
-    rand_1_2 = random.randint(0, 10)
-    np_rand_1_2 = np.random.randint(0, 10)
-    rand_2_2 = random.randint(0, 10)
-    np_rand_2_2 = np.random.randint(0, 10)
+    rand_1_2 = random.randint(0, 100000000)
+    np_rand_1_2 = np.random.randint(0, 100000000)
+    rand_2_2 = random.randint(0, 100000000)
+    np_rand_2_2 = np.random.randint(0, 100000000)
 
     seed_everything(1, seed_engines={"numpy"})
-    rand_1_3 = random.randint(0, 10)
-    np_rand_1_3 = np.random.randint(0, 10)
-    rand_2_3 = random.randint(0, 10)
-    np_rand_2_3 = np.random.randint(0, 10)
+    rand_1_3 = random.randint(0, 100000000)
+    np_rand_1_3 = np.random.randint(0, 100000000)
+    rand_2_3 = random.randint(0, 100000000)
+    np_rand_2_3 = np.random.randint(0, 100000000)
 
     assert rand_1 == rand_1_1
     assert rand_1 == rand_1_2

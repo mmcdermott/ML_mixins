@@ -11,6 +11,20 @@ from .utils import doublewrap
 
 
 class TimeableMixin:
+    """A mixin class to add timing functionality to a class for profiling its methods.
+
+    This mixin class provides the following functionality:
+        - Timing of methods using the TimeAs decorator.
+        - Timing of arbitrary code blocks using the _time_as context manager.
+        - Profiling of the durations of the timed methods.
+
+    Attributes:
+        _timings: A dictionary of lists of dictionaries containing the start and end times of timed methods.
+            The keys of the dictionary are the names of the timed methods.
+            The values are lists of dictionaries containing the start and end times of each timed method call.
+            The dictionaries contain the keys "start" and "end" with the corresponding times.
+    """
+
     _START_TIME = "start"
     _END_TIME = "end"
 

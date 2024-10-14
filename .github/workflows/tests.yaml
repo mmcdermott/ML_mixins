@@ -28,19 +28,39 @@ jobs:
 
       - name: Install packages
         run: |
-          pip install -e .[tests,tqdmable,tensorable]
+          pip install -e .[tests]
 
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
-      - name: Run tests
+      - name: Run non-torch tests
         run: |
-          pytest -v --doctest-modules --cov=src --junitxml=junit.xml -s --ignore=docs
+          pytest -v --doctest-modules --cov=src --junitxml=junit.xml -s --ignore=docs --ignore=tests/test_torch.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Install torch as well
+        run: |
+          pip install torch
+
+      - name: Run torch tests
+        run: |
+          pytest -v --cov=src --junitxml=junit.xml -s tests/test_torch.py
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1

@@ -20,7 +20,7 @@ dependencies = ["numpy"]
 
 [project.optional-dependencies]
 dev = ["pre-commit<4"]
-tests = ["pytest", "pytest-cov"]
+tests = ["pytest", "pytest-cov", "pytest-benchmark"]
 
 [tool.setuptools_scm]
 

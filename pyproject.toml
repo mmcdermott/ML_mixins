@@ -19,10 +19,8 @@ classifiers = [
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
-dev = ["pre-commit"]
+dev = ["pre-commit<4"]
 tests = ["pytest", "pytest-cov"]
-tqdmable = ["tqdm"]
-tensorable = ["torch"]
 
 [tool.setuptools_scm]
 

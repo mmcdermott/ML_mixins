@@ -97,7 +97,7 @@ class TimeableMixin:
         out = {}
         for k in self._timings:
             arr = np.array(self._times_for(k))
-            out[k] = (arr.mean(), len(arr), arr.std())
+            out[k] = (arr.mean(), len(arr), None if len(arr) <= 1 else arr.std())
         return out
 
     def _profile_durations(self, only_keys: set[str] | None = None):

@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from .utils import doublewrap
+from .utils import doublewrap, normalize_unit
 
 
 class TimeableMixin:
@@ -39,28 +39,8 @@ class TimeableMixin:
     ]
 
     @classmethod
-    def _get_pprint_num_unit(cls, x: float, x_unit: str = "sec") -> tuple[float, str]:
-        x_unit_factor = 1
-        for fac, unit in cls._CUTOFFS_AND_UNITS:
-            if unit == x_unit:
-                break
-            if fac is None:
-                raise LookupError(
-                    f"Passed unit {x_unit} invalid! "
-                    f"Must be one of {', '.join(u for f, u in cls._CUTOFFS_AND_UNITS)}."
-                )
-            x_unit_factor *= fac
-
-        min_unit = x * x_unit_factor
-        upper_bound = 1
-        for upper_bound_factor, unit in cls._CUTOFFS_AND_UNITS:
-            if (upper_bound_factor is None) or (min_unit < upper_bound * upper_bound_factor):
-                return min_unit / upper_bound, unit
-            upper_bound *= upper_bound_factor
-
-    @classmethod
     def _pprint_duration(cls, mean_sec: float, n_times: int = 1, std_seconds: float | None = None) -> str:
-        mean_time, mean_unit = cls._get_pprint_num_unit(mean_sec)
+        mean_time, mean_unit = normalize_unit((mean_sec, "sec"), cls._CUTOFFS_AND_UNITS)
 
         if std_seconds:
             std_time = std_seconds * mean_time / mean_sec

@@ -47,25 +47,6 @@ def test_benchmark_timing(benchmark):
     benchmark(T.decorated_takes_time, 0.00001)
 
 
-def test_pprint_num_unit():
-    assert (5, "μs") == TimeableMixin._get_pprint_num_unit(5 * 1e-6)
-
-    class Derived(TimeableMixin):
-        _CUTOFFS_AND_UNITS = [(10, "foo"), (2, "bar"), (None, "biz")]
-
-    assert (3, "biz") == Derived._get_pprint_num_unit(3, "biz")
-    assert (3, "foo") == Derived._get_pprint_num_unit(3 / 20, "biz")
-    assert (1.2, "biz") == Derived._get_pprint_num_unit(2.4 * 10, "foo")
-
-    try:
-        Derived._get_pprint_num_unit(1, "WRONG")
-        raise AssertionError("Should have raised an exception")
-    except LookupError:
-        pass
-    except Exception as e:
-        raise AssertionError(f"Raised the wrong exception: {e}")
-
-
 def test_context_manager():
     T = TimeableDerived()
 

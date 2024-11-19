@@ -79,9 +79,11 @@ def test_times_and_profiling():
     assert 0 == stats["decorated_takes_time_auto_key"][2]
 
     got_str = T._profile_durations()
-    want_str = "decorated_takes_time_auto_key: 2.0 sec\ndecorated:                     1.5 ± 0.5 sec (x2)"
+    want_str = (
+        "decorated_takes_time_auto_key: 2.0 ± 0.0 sec\ndecorated:                     1.5 ± 0.5 sec (x2)"
+    )
     assert want_str == got_str, f"Want:\n{want_str}\nGot:\n{got_str}"
 
     got_str = T._profile_durations(only_keys=["decorated_takes_time_auto_key"])
-    want_str = "decorated_takes_time_auto_key: 2.0 sec"
+    want_str = "decorated_takes_time_auto_key: 2.0 ± 0.0 sec"
     assert want_str == got_str, f"Want:\n{want_str}\nGot:\n{got_str}"

@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from .utils import doublewrap, normalize_unit
+from .utils import doublewrap, pprint_stats_map
 
 
 class TimeableMixin:
@@ -37,21 +37,6 @@ class TimeableMixin:
         (7, "days"),
         (None, "weeks"),
     ]
-
-    @classmethod
-    def _pprint_duration(cls, mean_sec: float, n_times: int = 1, std_seconds: float | None = None) -> str:
-        mean_time, mean_unit = normalize_unit((mean_sec, "sec"), cls._CUTOFFS_AND_UNITS)
-
-        if std_seconds:
-            std_time = std_seconds * mean_time / mean_sec
-            mean_std_str = f"{mean_time:.1f} ± {std_time:.1f} {mean_unit}"
-        else:
-            mean_std_str = f"{mean_time:.1f} {mean_unit}"
-
-        if n_times > 1:
-            return f"{mean_std_str} (x{n_times})"
-        else:
-            return mean_std_str
 
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get("_timings", defaultdict(list))
@@ -116,15 +101,9 @@ class TimeableMixin:
         return out
 
     def _profile_durations(self, only_keys: set[str] | None = None):
-        stats = self._duration_stats
+        stats = {k: ((v, "sec"), n, s) for k, (v, n, s) in self._duration_stats.items()}
 
         if only_keys is not None:
             stats = {k: v for k, v in stats.items() if k in only_keys}
 
-        longest_key_length = max(len(k) for k in stats)
-        ordered_keys = sorted(stats.keys(), key=lambda k: stats[k][0] * stats[k][1])
-        tfk_str = "\n".join(
-            (f"{k}:{' '*(longest_key_length - len(k))} " f"{self._pprint_duration(*stats[k])}")
-            for k in ordered_keys
-        )
-        return tfk_str
+        return pprint_stats_map(stats, self._CUTOFFS_AND_UNITS)

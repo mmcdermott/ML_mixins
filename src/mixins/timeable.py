@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from .utils import doublewrap
+from .utils import doublewrap, pprint_stats_map
 
 
 class TimeableMixin:
@@ -37,41 +37,6 @@ class TimeableMixin:
         (7, "days"),
         (None, "weeks"),
     ]
-
-    @classmethod
-    def _get_pprint_num_unit(cls, x: float, x_unit: str = "sec") -> tuple[float, str]:
-        x_unit_factor = 1
-        for fac, unit in cls._CUTOFFS_AND_UNITS:
-            if unit == x_unit:
-                break
-            if fac is None:
-                raise LookupError(
-                    f"Passed unit {x_unit} invalid! "
-                    f"Must be one of {', '.join(u for f, u in cls._CUTOFFS_AND_UNITS)}."
-                )
-            x_unit_factor *= fac
-
-        min_unit = x * x_unit_factor
-        upper_bound = 1
-        for upper_bound_factor, unit in cls._CUTOFFS_AND_UNITS:
-            if (upper_bound_factor is None) or (min_unit < upper_bound * upper_bound_factor):
-                return min_unit / upper_bound, unit
-            upper_bound *= upper_bound_factor
-
-    @classmethod
-    def _pprint_duration(cls, mean_sec: float, n_times: int = 1, std_seconds: float | None = None) -> str:
-        mean_time, mean_unit = cls._get_pprint_num_unit(mean_sec)
-
-        if std_seconds:
-            std_time = std_seconds * mean_time / mean_sec
-            mean_std_str = f"{mean_time:.1f} ± {std_time:.1f} {mean_unit}"
-        else:
-            mean_std_str = f"{mean_time:.1f} {mean_unit}"
-
-        if n_times > 1:
-            return f"{mean_std_str} (x{n_times})"
-        else:
-            return mean_std_str
 
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get("_timings", defaultdict(list))
@@ -132,19 +97,13 @@ class TimeableMixin:
         out = {}
         for k in self._timings:
             arr = np.array(self._times_for(k))
-            out[k] = (arr.mean(), len(arr), arr.std())
+            out[k] = (arr.mean(), len(arr), None if len(arr) <= 1 else arr.std())
         return out
 
     def _profile_durations(self, only_keys: set[str] | None = None):
-        stats = self._duration_stats
+        stats = {k: ((v, "sec"), n, s) for k, (v, n, s) in self._duration_stats.items()}
 
         if only_keys is not None:
             stats = {k: v for k, v in stats.items() if k in only_keys}
 
-        longest_key_length = max(len(k) for k in stats)
-        ordered_keys = sorted(stats.keys(), key=lambda k: stats[k][0] * stats[k][1])
-        tfk_str = "\n".join(
-            (f"{k}:{' '*(longest_key_length - len(k))} " f"{self._pprint_duration(*stats[k])}")
-            for k in ordered_keys
-        )
-        return tfk_str
+        return pprint_stats_map(stats, self._CUTOFFS_AND_UNITS)

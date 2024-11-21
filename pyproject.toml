@@ -19,6 +19,7 @@ classifiers = [
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
+memtrackable = ["memray"]
 dev = ["pre-commit<4"]
 tests = ["pytest", "pytest-cov", "pytest-benchmark"]
 

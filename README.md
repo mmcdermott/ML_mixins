@@ -21,10 +21,15 @@ pip install ml-mixins
 
 ## Usage
 
-You can use these mixins in your own classes by inheriting from them, then leveraging their included methods
-in your derived class.
+You can use these mixins either by (1) Defining your classes to inherit from them, then leveraging their
+included methods in your derived class, or (2) Adding them post-hoc to an existing class for use in secondary
+applications such as benchmarking or debugging without overhead in production code. Below, we show how to use
+each mixin directly first, then we show how to add them to an existing class at the end, as that process will
+still leverage the same decorator methods and class member variables in the resulting modified classes.
 
-### `SeedableMixin`
+### Mixin Documentation
+
+#### `SeedableMixin`
 
 ```python
 from mixins import SeedableMixin
@@ -39,10 +44,35 @@ class MyModel(SeedableMixin):
 ...
 ```
 
-### `TimeableMixin`
+#### `TimeableMixin`
 
 TODO
 
-### `MemTrackableMixin`
+#### `MemTrackableMixin`
 
 TODO
+
+### Adding Mixins Post-Hoc
+
+```python
+from mixins import TimeableMixin, add_mixin
+
+
+class MyModel:
+    ...
+
+    def fit(self, X, y): ...
+
+
+# Add the mixin to the class
+TimedModel = add_mixin(
+    MyModel, TimeableMixin, decorate_methods={"fit": TimeableMixin.TimeAs}
+)
+
+# Now, the class `TimedModel` will have the same methods as `MyModel`, but with the added timing
+# functionality:
+
+model = TimedModel()
+model.fit(X, y)
+model._profile_durations()  # will print durations...
+```

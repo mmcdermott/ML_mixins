@@ -33,5 +33,7 @@ functionality to python objects for use in ML / data science. They currently inc
     various times so that a subsection of the computation can be reproduced exactly during debugging outside of
     the rest of the computation flow.
 2. `TimeableMixin` adds functionality for timing sections of code for benchmarking performance.
+3. `MemTrackableMixin` adds functionality for tracking the memory expenditure of code via `memray` for
+    benchmarking performance.
 
 None of these are guaranteed to work or be useful at this point.

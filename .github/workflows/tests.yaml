@@ -28,7 +28,7 @@ jobs:
 
       - name: Install packages
         run: |
-          pip install -e .[tests]
+          pip install -e .[tests,memtrackable]
 
       #----------------------------------------------
       #              run test suite

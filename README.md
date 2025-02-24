@@ -8,6 +8,9 @@
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mmcdermott/ML_mixins/pulls)
 [![contributors](https://img.shields.io/github/contributors/mmcdermott/ML_mixins.svg)](https://github.com/mmcdermott/ML_mixins/graphs/contributors)
 
+This package contains some useful python mixin classes for use in ML / data science, including a mixin for
+seeding (`SeedableMixin`), timing (`TimeableMixin`), and memory tracking (`MemTrackableMixin`).
+
 ## Installation
 
 this package can be installed via [`pip`](https://pypi.org/project/ml-mixins/):
@@ -16,22 +19,60 @@ this package can be installed via [`pip`](https://pypi.org/project/ml-mixins/):
 pip install ml-mixins
 ```
 
-Then
+## Usage
 
-```
+You can use these mixins either by (1) Defining your classes to inherit from them, then leveraging their
+included methods in your derived class, or (2) Adding them post-hoc to an existing class for use in secondary
+applications such as benchmarking or debugging without overhead in production code. Below, we show how to use
+each mixin directly first, then we show how to add them to an existing class at the end, as that process will
+still leverage the same decorator methods and class member variables in the resulting modified classes.
+
+### Mixin Documentation
+
+#### `SeedableMixin`
+
+```python
 from mixins import SeedableMixin
+
+class MyModel(SeedableMixin):
+    ...
+
+    @SeedableMixin.WithSeed
+    def fit(self, X, y):
+        # This function can now be called with a seed kwarg, or it will use a pseudo-random seed which will be
+        # saved to a class member variable if a seed is not passed.
 ...
 ```
 
-## Description
+#### `TimeableMixin`
 
-Useful Python Mixins for ML. These are python mixin classes that can be used to add useful bits of discrete
-functionality to python objects for use in ML / data science. They currently include:
+TODO
 
-1. `SeedableMixin` which adds seeding capabilities, including functions to seed various stages of computation
-    in a manner that is both random but also reproducible from a global seed, as well as to store seeds used at
-    various times so that a subsection of the computation can be reproduced exactly during debugging outside of
-    the rest of the computation flow.
-2. `TimeableMixin` adds functionality for timing sections of code for benchmarking performance.
+#### `MemTrackableMixin`
 
-None of these are guaranteed to work or be useful at this point.
+TODO
+
+### Adding Mixins Post-Hoc
+
+```python
+from mixins import TimeableMixin, add_mixin
+
+
+class MyModel:
+    ...
+
+    def fit(self, X, y): ...
+
+
+# Add the mixin to the class
+TimedModel = add_mixin(
+    MyModel, TimeableMixin, decorate_methods={"fit": TimeableMixin.TimeAs}
+)
+
+# Now, the class `TimedModel` will have the same methods as `MyModel`, but with the added timing
+# functionality:
+
+model = TimedModel()
+model.fit(X, y)
+model._profile_durations()  # will print durations...
+```

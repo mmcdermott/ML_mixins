@@ -28,14 +28,14 @@ jobs:
 
       - name: Install packages
         run: |
-          pip install -e .[tests,memtrackable]
+          pip install -e .[tests]
 
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
-      - name: Run non-torch tests
+      - name: Run non-torch, non-memtrackable tests
         run: |
-          pytest -v --doctest-modules --cov=src --junitxml=junit.xml -s --ignore=docs --ignore=tests/test_torch.py
+          pytest -v --doctest-modules --cov=src --junitxml=junit.xml -s --ignore=docs --ignore=tests/test_torch.py --ignore=src/mixins/memtrackable.py --ignore=tests/test_memtrackable_mixin.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.0.1
@@ -48,13 +48,37 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Install torch as well
+      - name: Install torch
         run: |
           pip install torch
 
       - name: Run torch tests
         run: |
           pytest -v --cov=src --junitxml=junit.xml -s tests/test_torch.py
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Set up for memray runs with Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install with memray
+        run: |
+          pip install -e .[tests,memtrackable]
+
+      - name: Run memtrackable tests
+        run: |
+          pytest -v --cov=src --junitxml=junit.xml -s tests/test_memtrackable_mixin.py src/mixins/memtrackable.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.0.1

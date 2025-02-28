@@ -25,6 +25,12 @@ tests = ["pytest", "pytest-cov", "pytest-benchmark"]
 
 [tool.setuptools_scm]
 
+[tool.pytest.ini_options]
+addopts = [
+  "--color=yes",
+  "--doctest-modules",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/mmcdermott/ML_mixins"
 "Bug Tracker" = "https://github.com/mmcdermott/ML_mixins/issues"

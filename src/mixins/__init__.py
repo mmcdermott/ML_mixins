@@ -5,7 +5,7 @@ from .timeable import TimeableMixin  # noqa: F401
 exports = ["add_mixin", "SeedableMixin", "TimeableMixin"]
 
 try:
-    from .mem_trackable import MemTrackableMixin  # noqa: F401
+    from .memtrackable import MemTrackableMixin  # noqa: F401
 
     exports.append("MemTrackableMixin")
 except ImportError:

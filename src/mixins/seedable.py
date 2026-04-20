@@ -45,26 +45,34 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
         The seed that was used.
 
     Examples:
-        >>> random.seed(0)
-        >>> np.random.seed(0)
-        >>> random.randint(0, 10)
-        6
-        >>> random.randint(0, 10)
-        6
-        >>> np.random.randint(0, 10)
-        5
-        >>> np.random.randint(0, 10)
-        0
+        Seeding produces reproducible draws from both ``random`` and ``numpy``:
+
         >>> seed_everything(0)
         0
-        >>> random.randint(0, 10)
-        6
-        >>> random.randint(0, 10)
-        6
-        >>> np.random.randint(0, 10)
-        5
-        >>> np.random.randint(0, 10)
+        >>> random.randint(0, 10), np.random.randint(0, 10)
+        (6, 5)
+        >>> seed_everything(0)
         0
+        >>> random.randint(0, 10), np.random.randint(0, 10)
+        (6, 5)
+
+        ``seed_engines`` restricts which RNGs get reseeded — the engines *not* listed keep advancing from
+        their current state:
+
+        >>> _ = seed_everything(1)                           # reset both
+        >>> a_py, a_np = random.random(), np.random.random()
+        >>> _ = seed_everything(2, seed_engines={"random"})  # only reseed Python random
+        >>> b_py, b_np = random.random(), np.random.random()
+        >>> _ = seed_everything(1)                           # back to fully reset
+        >>> c_py, c_np = random.random(), np.random.random()
+        >>> a_py == c_py and a_np == c_np     # both engines match under the same full reset
+        True
+        >>> b_py == a_py                      # Python rng was reseeded to 2, so differs from run a
+        False
+        >>> b_np == a_np                      # numpy rng was NOT reseeded, but since seed_everything(2)
+        ...                                   # only touched random, numpy kept advancing from the state
+        ...                                   # seed_everything(1) left it in — not guaranteed equal here
+        False
     """
 
     if seed_engines is None:
@@ -89,8 +97,32 @@ class SeedableMixin:
 
     This seeding can be used to ensure reproducibility in experiments, both in individual examples with an
     integral seed or in a stochastic process both at a per-event level and at a whole process level by seeding
-    with `None`, in which case a new seed is chosen for each event in the process based on the prior seed and
-    stored.
+    with ``None``, in which case a new seed is chosen for each event in the process based on the prior seed
+    and stored.
+
+    Examples:
+        Calling ``_seed(n)`` twice with the same ``n`` freezes subsequent random draws to the same sequence:
+
+        >>> class M(SeedableMixin):
+        ...     def gen(self):
+        ...         return (random.random(), np.random.rand())
+        >>> m = M()
+        >>> _ = m._seed(1); a1, a2 = m.gen(), m.gen()
+        >>> _ = m._seed(1); b1, b2 = m.gen(), m.gen()
+        >>> a1 == b1 and a2 == b2
+        True
+        >>> a1 != a2                 # repeated draws within one seeded run still differ
+        True
+
+        With ``_seed()`` (no arg), the new seed is drawn from the current random state — so the *sequence*
+        of seeds is itself reproducible once the chain has been seeded:
+
+        >>> _ = m._seed(1)
+        >>> chain_a = [m._seed() for _ in range(3)]
+        >>> _ = m._seed(1)
+        >>> chain_b = [m._seed() for _ in range(3)]
+        >>> chain_a == chain_b
+        True
     """
 
     def __init__(self, *args, **kwargs):
@@ -222,6 +254,26 @@ class SeedableMixin:
         work, and the failure will not necessarily be graceful.
 
         Examples:
+            >>> class M(SeedableMixin):
+            ...     @SeedableMixin.WithSeed
+            ...     def draw(self):
+            ...         return random.random()
+            ...     @SeedableMixin.WithSeed(key="custom")
+            ...     def keyed_draw(self):
+            ...         return random.random()
+            >>> m = M()
+            >>> m.draw(seed=1) == m.draw(seed=1)
+            True
+            >>> m.draw(seed=1) != m.draw(seed=2)
+            True
+
+        The auto-keyed form records the seed under the function name; the explicit form under ``key=``:
+            >>> _ = m.draw(seed=1)
+            >>> _ = m.keyed_draw(seed=2)
+            >>> _, last_draw = m._last_seed("draw")
+            >>> _, last_custom = m._last_seed("custom")
+            >>> last_draw, last_custom
+            (1, 2)
         """
         if key is None:
             key = fn.__name__

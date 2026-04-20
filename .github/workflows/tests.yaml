@@ -29,7 +29,7 @@ jobs:
       - name: Run non-torch, non-memtrackable tests
         run: >
           uv run pytest -v --doctest-modules --cov=src --junitxml=junit.xml -s
-          --ignore=docs --ignore=tests/test_torch.py
+          --ignore=docs --ignore=tests/test_torch.py --ignore=README.md
           --ignore=src/mixins/memtrackable.py --ignore=tests/test_memtrackable_mixin.py
 
       - name: Upload coverage to Codecov
@@ -63,10 +63,11 @@ jobs:
       - name: Install memray
         run: uv sync --locked --group tests --extra memtrackable
 
-      - name: Run memtrackable tests
+      - name: Run memtrackable tests and README doctests
         run: >
-          uv run pytest -v --cov=src --junitxml=junit.xml -s
-          tests/test_memtrackable_mixin.py src/mixins/memtrackable.py
+          uv run pytest -v --doctest-modules --doctest-glob='*.md'
+          --cov=src --junitxml=junit.xml -s
+          tests/test_memtrackable_mixin.py src/mixins/memtrackable.py README.md
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

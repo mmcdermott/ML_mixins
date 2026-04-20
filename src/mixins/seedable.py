@@ -214,6 +214,26 @@ class SeedableMixin:
         work, and the failure will not necessarily be graceful.
 
         Examples:
+            >>> class M(SeedableMixin):
+            ...     @SeedableMixin.WithSeed
+            ...     def draw(self):
+            ...         return random.random()
+            ...     @SeedableMixin.WithSeed(key="custom")
+            ...     def keyed_draw(self):
+            ...         return random.random()
+            >>> m = M()
+            >>> m.draw(seed=1) == m.draw(seed=1)
+            True
+            >>> m.draw(seed=1) != m.draw(seed=2)
+            True
+
+        The auto-keyed form records the seed under the function name; the explicit form under ``key=``:
+            >>> _ = m.draw(seed=1)
+            >>> _ = m.keyed_draw(seed=2)
+            >>> _, last_draw = m._last_seed("draw")
+            >>> _, last_custom = m._last_seed("custom")
+            >>> last_draw, last_custom
+            (1, 2)
         """
         if key is None:
             key = fn.__name__

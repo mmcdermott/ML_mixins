@@ -2,11 +2,23 @@ import functools
 
 
 def doublewrap(f):
-    """
-    a decorator decorator, allowing the decorator to be used as:
-    @decorator(with, arguments, and=kwargs)
-    or
-    @decorator
+    """A decorator-of-decorators that lets the wrapped decorator be used with or without arguments.
+
+    With this applied, a decorator can be written as a single two-argument function ``f(fn, **opts)`` and
+    then used either bare (``@decorator``) or with keyword arguments (``@decorator(key="x")``), without
+    repeating the usual "is the first argument the target function or a configuration argument?" dispatch.
+
+    Examples:
+        >>> @doublewrap
+        ... def tag(fn, label="default"):
+        ...     fn.label = label
+        ...     return fn
+        >>> @tag
+        ... def bare(): ...
+        >>> @tag(label="custom")
+        ... def with_args(): ...
+        >>> bare.label, with_args.label
+        ('default', 'custom')
     """
 
     @functools.wraps(f)

@@ -41,11 +41,12 @@ class TimeableMixin:
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get("_timings", defaultdict(list))
 
-    def __assert_key_exists(self, key: str) -> None:
-        assert hasattr(self, "_timings") and key in self._timings, f"{key} should exist in self._timings!"
+    def __check_key_exists(self, key: str) -> None:
+        if not hasattr(self, "_timings") or key not in self._timings:
+            raise KeyError(f"{key} should exist in self._timings!")
 
     def _times_for(self, key: str) -> list[float]:
-        self.__assert_key_exists(key)
+        self.__check_key_exists(key)
         return [
             t[self._END_TIME] - t[self._START_TIME]
             for t in self._timings[key]
@@ -53,8 +54,9 @@ class TimeableMixin:
         ]
 
     def _time_so_far(self, key: str) -> float:
-        self.__assert_key_exists(key)
-        assert self._END_TIME not in self._timings[key][-1], f"{key} is not currently being timed!"
+        self.__check_key_exists(key)
+        if self._END_TIME in self._timings[key][-1]:
+            raise RuntimeError(f"{key} is not currently being timed!")
         return time.time() - self._timings[key][-1][self._START_TIME]
 
     def _register_start(self, key: str) -> None:
@@ -64,9 +66,10 @@ class TimeableMixin:
         self._timings[key].append({self._START_TIME: time.time()})
 
     def _register_end(self, key: str) -> None:
-        assert hasattr(self, "_timings")
-        assert key in self._timings and len(self._timings[key]) > 0
-        assert self._timings[key][-1].get(self._END_TIME, None) is None
+        if not hasattr(self, "_timings") or key not in self._timings or not self._timings[key]:
+            raise RuntimeError(f"Cannot end timing for {key!r}: no open timer registered.")
+        if self._timings[key][-1].get(self._END_TIME, None) is not None:
+            raise RuntimeError(f"Cannot end timing for {key!r}: last entry is already closed.")
         self._timings[key][-1][self._END_TIME] = time.time()
 
     @contextmanager

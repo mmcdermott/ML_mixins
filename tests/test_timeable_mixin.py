@@ -85,3 +85,30 @@ def test_times_and_profiling():
     got_str = T._profile_durations(only_keys=["decorated_takes_time_auto_key"])
     want_str = "decorated_takes_time_auto_key: 2.0 sec"
     assert want_str == got_str, f"Want:\n{want_str}\nGot:\n{got_str}"
+
+
+def test_misuse_raises_explicit_exceptions():
+    """Runtime validation must not rely on assert (stripped under python -O)."""
+    import pytest
+
+    T = TimeableMixin()
+
+    # Querying an unknown key raises KeyError, not AssertionError.
+    with pytest.raises(KeyError):
+        T._times_for("nope")
+    with pytest.raises(KeyError):
+        T._time_so_far("nope")
+
+    # Ending a timer that was never started raises RuntimeError.
+    with pytest.raises(RuntimeError):
+        T._register_end("nope")
+
+    # Ending a timer twice in a row raises RuntimeError.
+    T._register_start("k")
+    T._register_end("k")
+    with pytest.raises(RuntimeError):
+        T._register_end("k")
+
+    # _time_so_far on a closed timer raises RuntimeError.
+    with pytest.raises(RuntimeError):
+        T._time_so_far("k")

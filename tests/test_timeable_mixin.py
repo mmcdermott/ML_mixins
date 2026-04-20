@@ -85,3 +85,30 @@ def test_times_and_profiling():
     got_str = T._profile_durations(only_keys=["decorated_takes_time_auto_key"])
     want_str = "decorated_takes_time_auto_key: 2.0 sec"
     assert want_str == got_str, f"Want:\n{want_str}\nGot:\n{got_str}"
+
+
+def test_time_as_decorator_closes_timer_on_exception():
+    """Regression: a method raising inside @TimeAs must still close its timing entry."""
+
+    class T(TimeableMixin):
+        @TimeableMixin.TimeAs
+        def boom(self):
+            raise RuntimeError("oops")
+
+    t = T()
+    try:
+        t.boom()
+    except RuntimeError:
+        pass
+
+    # The timer opened by @TimeAs must be closed so:
+    # (a) _times_for returns the duration of the failed call, and
+    # (b) subsequent calls don't see a stale in-flight entry.
+    assert len(t._times_for("boom")) == 1
+    assert t._times_for("boom")[0] >= 0
+
+    try:
+        t.boom()
+    except RuntimeError:
+        pass
+    assert len(t._times_for("boom")) == 2

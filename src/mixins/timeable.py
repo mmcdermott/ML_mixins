@@ -85,10 +85,8 @@ class TimeableMixin:
 
         @functools.wraps(fn)
         def wrapper_timing(self, *args, **kwargs):
-            self._register_start(key=key)
-            out = fn(self, *args, **kwargs)
-            self._register_end(key=key)
-            return out
+            with self._time_as(key):
+                return fn(self, *args, **kwargs)
 
         return wrapper_timing
 

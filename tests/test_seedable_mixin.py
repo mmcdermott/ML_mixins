@@ -6,13 +6,6 @@ import numpy as np
 from mixins import SeedableMixin
 from mixins.seedable import seed_everything
 
-try:
-    pass
-
-    raise ImportError("This test requires torch not to be installed to run.")
-except (ImportError, ModuleNotFoundError):
-    pass
-
 
 class SeedableDerived(SeedableMixin):
     def __init__(self):

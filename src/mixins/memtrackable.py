@@ -53,7 +53,10 @@ class MemTrackableMixin:
 
         Raises:
             FileNotFoundError: If the memray tracker file is not found.
-            ValueError: If the stats file cannot be parsed.
+            ValueError: If the ``memray stats`` subprocess fails (malformed tracker file, surfaced
+                via the subprocess's stderr), if the ``memray`` CLI is missing from PATH or
+                otherwise cannot be launched, if the resulting stats file cannot be read (missing,
+                permission denied, non-UTF-8), or if its contents cannot be parsed as JSON.
 
         Examples:
             >>> import tempfile
@@ -66,7 +69,8 @@ class MemTrackableMixin:
             ...     print(stats['metadata']['peak_memory'])
             8000
 
-        If you run it on a tracker file that is malformed, it won't work.
+        If you run it on a tracker file that is malformed, it won't work — the underlying
+        ``memray stats`` error is surfaced in the ``ValueError`` rather than swallowed:
             >>> with tempfile.TemporaryDirectory() as tmpdir:
             ...     memray_tracker_fp = Path(tmpdir) / ".memray"
             ...     memray_stats_fp = Path(tmpdir) / "memray_stats.json"
@@ -74,7 +78,8 @@ class MemTrackableMixin:
             ...     MemTrackableMixin.get_memray_stats(memray_tracker_fp, memray_stats_fp)
             Traceback (most recent call last):
                 ...
-            ValueError: Failed to extract and parse memray stats file at ...
+            ValueError: `memray stats` failed for ...
+            ...
 
         If you run it on a non-existent file, it won't work.
             >>> MemTrackableMixin.get_memray_stats(Path("non_existent.mem"), Path("non_existent.stats"))
@@ -85,12 +90,38 @@ class MemTrackableMixin:
         if not memray_tracker_fp.is_file():
             raise FileNotFoundError(f"Memray tracker file not found at {memray_tracker_fp}")
 
-        memray_stats_cmd = f"memray stats {memray_tracker_fp} --json -o {memray_stats_fp} -f"
         try:
-            subprocess.run(memray_stats_cmd, shell=True, check=True, capture_output=True)
-            return json.loads(memray_stats_fp.read_text())
-        except Exception as e:
-            raise ValueError(f"Failed to extract and parse memray stats file at {memray_stats_fp}") from e
+            subprocess.run(
+                [
+                    "memray",
+                    "stats",
+                    str(memray_tracker_fp),
+                    "--json",
+                    "-o",
+                    str(memray_stats_fp),
+                    "-f",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            stderr = (e.stderr or "").strip() or "No stderr output."
+            raise ValueError(f"`memray stats` failed for {memray_tracker_fp}:\n{stderr}") from e
+        except OSError as e:
+            # Raised by subprocess.run itself when the executable is missing or unlaunchable.
+            raise ValueError(
+                f"Failed to launch `memray stats` for {memray_tracker_fp}: {e}. "
+                "Ensure the `memray` CLI is installed and available on PATH."
+            ) from e
+        try:
+            stats_text = memray_stats_fp.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as e:
+            raise ValueError(f"Failed to read memray stats output at {memray_stats_fp}: {e}") from e
+        try:
+            return json.loads(stats_text)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse memray stats JSON at {memray_stats_fp}") from e
 
     def __init__(self, *args, **kwargs):
         self._mem_stats = kwargs.get("_mem_stats", defaultdict(list))

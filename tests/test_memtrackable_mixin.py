@@ -62,6 +62,92 @@ def test_context_manager():
     np.testing.assert_almost_equal(mem_used, 64 * 10000, decimal=1)
 
 
+def test_get_memray_stats_accepts_paths_with_shell_metacharacters(tmp_path):
+    """Regression: the subprocess must run with argv, not shell=True, so paths with
+    spaces / semicolons / $(...) do not get interpreted by a shell."""
+    from memray import Tracker
+
+    tricky_dir = tmp_path / "a b; echo pwned"
+    tricky_dir.mkdir()
+    tracker_fp = tricky_dir / ".memray"
+    stats_fp = tricky_dir / "memray_stats.json"
+
+    with Tracker(tracker_fp, follow_fork=True):
+        np.ones((1000,), dtype=np.float64)
+
+    stats = MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+    assert isinstance(stats, dict)
+    assert "metadata" in stats
+    assert stats_fp.is_file()
+
+
+def test_get_memray_stats_raises_on_malformed_json(tmp_path, monkeypatch):
+    """Regression: if `memray stats` writes invalid JSON, surface a clear ValueError."""
+    import subprocess
+
+    import mixins.memtrackable as memtrackable
+
+    tracker_fp = tmp_path / ".memray"
+    stats_fp = tmp_path / "memray_stats.json"
+    tracker_fp.touch()  # get past the FileNotFoundError guard
+
+    def fake_run(cmd, **_kw):
+        stats_fp.write_text("not-valid-json {")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
+
+    try:
+        MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+        raise AssertionError("Should have raised a ValueError!")
+    except ValueError as e:
+        assert "Failed to parse memray stats JSON" in str(e)
+
+
+def test_get_memray_stats_raises_when_stats_file_unreadable(tmp_path, monkeypatch):
+    """Regression: if the subprocess succeeds but the stats file cannot be read, surface ValueError."""
+    import subprocess
+
+    import mixins.memtrackable as memtrackable
+
+    tracker_fp = tmp_path / ".memray"
+    stats_fp = tmp_path / "memray_stats.json"
+    tracker_fp.touch()
+
+    def fake_run(cmd, **_kw):
+        # Pretend memray succeeded but don't actually write the stats file.
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
+
+    try:
+        MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+        raise AssertionError("Should have raised a ValueError!")
+    except ValueError as e:
+        assert "Failed to read memray stats output" in str(e)
+
+
+def test_get_memray_stats_raises_when_memray_binary_missing(tmp_path, monkeypatch):
+    """Regression: a missing memray binary surfaces as ValueError, not a leaked FileNotFoundError."""
+    import mixins.memtrackable as memtrackable
+
+    tracker_fp = tmp_path / ".memray"
+    stats_fp = tmp_path / "memray_stats.json"
+    tracker_fp.touch()  # get past the outer FileNotFoundError guard
+
+    def fake_run(_cmd, **_kw):
+        raise FileNotFoundError(2, "No such file or directory", "memray")
+
+    monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
+
+    try:
+        MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+        raise AssertionError("Should have raised a ValueError!")
+    except ValueError as e:
+        assert "Failed to launch `memray stats`" in str(e)
+        assert "PATH" in str(e)
+
+
 def test_decorators_and_profiling():
     M = MemTrackableDerived()
     M.decorated_takes_mem(mem_size_64b=16000)

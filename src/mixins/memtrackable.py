@@ -118,12 +118,18 @@ class MemTrackableMixin:
             raise AttributeError(f"{key} should exist in self._mem_stats!")
 
     def _peak_mem_for(self, key: str) -> list[float]:
+        """Return per-call peak memory (in bytes) recorded under ``key``."""
         self.__assert_key_exists(key)
 
         return [v["metadata"]["peak_memory"] for v in self._mem_stats[key]]
 
     @contextmanager
     def _track_memory_as(self, key: str):
+        """Context manager that tracks peak memory of the enclosed block under ``key``.
+
+        Runs a ``memray.Tracker`` against a temporary file, parses its stats, and appends the result to
+        ``self._mem_stats[key]``. The tracker file and its stats export are cleaned up on exit.
+        """
         if not hasattr(self, "_mem_stats"):
             self._mem_stats = defaultdict(list)
 
@@ -142,6 +148,11 @@ class MemTrackableMixin:
     @staticmethod
     @doublewrap
     def TrackMemoryAs(fn, key: str | None = None):
+        """Decorator that tracks peak memory per call to ``fn`` under ``key`` (default: ``fn.__name__``).
+
+        Use as ``@TrackMemoryAs`` or ``@TrackMemoryAs(key="custom")``. See ``_track_memory_as`` for the
+        context-manager equivalent.
+        """
         if key is None:
             key = fn.__name__
 
@@ -155,6 +166,7 @@ class MemTrackableMixin:
 
     @property
     def _memory_stats(self):
+        """Per key: ``(mean_peak_bytes, count, std_or_None)``; ``std`` omitted for single-call keys."""
         out = {}
         for k in self._mem_stats:
             arr = np.array(self._peak_mem_for(k))
@@ -162,6 +174,11 @@ class MemTrackableMixin:
         return out
 
     def _profile_memory_usages(self, only_keys: set[str] | None = None):
+        """Render ``_memory_stats`` as a multi-line aligned string, with auto-selected units per key.
+
+        Rows are sorted ascending by total memory (mean × count), so hotspots appear last. Pass
+        ``only_keys`` to restrict to a subset.
+        """
         stats = {k: ((v, "B"), n, s) for k, (v, n, s) in self._memory_stats.items()}
 
         if only_keys is not None:

@@ -41,15 +41,21 @@ class TimeableMixin:
     def __init__(self, *args, **kwargs):
         self._timings = kwargs.get("_timings", defaultdict(list))
 
-    def __assert_key_exists(self, key: str) -> None:
-        assert hasattr(self, "_timings") and key in self._timings, f"{key} should exist in self._timings!"
+    def __check_key_exists(self, key: str) -> None:
+        if not hasattr(self, "_timings"):
+            raise AttributeError(
+                "TimeableMixin is not initialized: self._timings is missing. "
+                "Did a subclass forget to call super().__init__()?"
+            )
+        if key not in self._timings:
+            raise KeyError(key)
 
     def _times_for(self, key: str) -> list[float]:
         """Return per-call durations (in seconds) recorded under ``key``.
 
         Only completed (start + end) entries are returned; an in-flight timer is skipped.
         """
-        self.__assert_key_exists(key)
+        self.__check_key_exists(key)
         return [
             t[self._END_TIME] - t[self._START_TIME]
             for t in self._timings[key]
@@ -58,8 +64,11 @@ class TimeableMixin:
 
     def _time_so_far(self, key: str) -> float:
         """Return seconds elapsed since the most recent ``_register_start(key)`` on an open timer."""
-        self.__assert_key_exists(key)
-        assert self._END_TIME not in self._timings[key][-1], f"{key} is not currently being timed!"
+        self.__check_key_exists(key)
+        if not self._timings[key]:
+            raise RuntimeError(f"Cannot check elapsed time for {key!r}: no open timer registered.")
+        if self._END_TIME in self._timings[key][-1]:
+            raise RuntimeError(f"Cannot check elapsed time for {key!r}: timer is not currently running.")
         return time.time() - self._timings[key][-1][self._START_TIME]
 
     def _register_start(self, key: str) -> None:
@@ -70,10 +79,17 @@ class TimeableMixin:
         self._timings[key].append({self._START_TIME: time.time()})
 
     def _register_end(self, key: str) -> None:
-        """Close the most recent open timing entry for ``key`` with the current wall-clock time."""
-        assert hasattr(self, "_timings")
-        assert key in self._timings and len(self._timings[key]) > 0
-        assert self._timings[key][-1].get(self._END_TIME, None) is None
+        """Close the most recent open timing entry for ``key`` with the current wall-clock time.
+
+        Raises ``AttributeError`` if the mixin was not initialized and ``self._timings`` is missing,
+        ``KeyError`` if ``key`` is unknown, and ``RuntimeError`` on lifecycle misuse (no open timer
+        under a known key, or last entry already closed).
+        """
+        self.__check_key_exists(key)
+        if not self._timings[key]:
+            raise RuntimeError(f"Cannot end timing for {key!r}: no open timer registered.")
+        if self._timings[key][-1].get(self._END_TIME, None) is not None:
+            raise RuntimeError(f"Cannot end timing for {key!r}: last entry is already closed.")
         self._timings[key][-1][self._END_TIME] = time.time()
 
     @contextmanager

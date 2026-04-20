@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 import numpy as np
 
@@ -85,6 +86,47 @@ def test_times_and_profiling():
     got_str = T._profile_durations(only_keys=["decorated_takes_time_auto_key"])
     want_str = "decorated_takes_time_auto_key: 2.0 sec"
     assert want_str == got_str, f"Want:\n{want_str}\nGot:\n{got_str}"
+
+
+def test_misuse_raises_explicit_exceptions():
+    """Runtime validation must not rely on assert (stripped under python -O)."""
+    import pytest
+
+    T = TimeableMixin()
+
+    # Unknown-key access raises KeyError across all three query methods — consistent contract.
+    with pytest.raises(KeyError):
+        T._times_for("nope")
+    with pytest.raises(KeyError):
+        T._time_so_far("nope")
+    with pytest.raises(KeyError):
+        T._register_end("nope")
+
+    # Lifecycle misuse on a known key raises RuntimeError.
+    T._register_start("k")
+    T._register_end("k")
+    with pytest.raises(RuntimeError):
+        T._register_end("k")  # already closed
+
+    # _time_so_far on a closed timer raises RuntimeError.
+    with pytest.raises(RuntimeError):
+        T._time_so_far("k")
+
+    # _time_so_far on a key whose timing list is empty also raises RuntimeError (guards against
+    # IndexError leaking through a pre-injected _timings=defaultdict(list)).
+    T2 = TimeableMixin(_timings=defaultdict(list))
+    T2._timings["empty"]  # noqa: B018 — materialize the empty list like a user might
+    with pytest.raises(RuntimeError):
+        T2._time_so_far("empty")
+
+    # Missing _timings (subclass forgot super().__init__()) surfaces as AttributeError.
+    class Broken(TimeableMixin):
+        def __init__(self):
+            pass  # no super().__init__(), so _timings is never set
+
+    b = Broken()
+    with pytest.raises(AttributeError):
+        b._times_for("anything")
 
 
 def test_time_as_decorator_closes_timer_on_exception():

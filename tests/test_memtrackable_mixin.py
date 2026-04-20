@@ -65,12 +65,7 @@ def test_context_manager():
 def test_get_memray_stats_accepts_paths_with_shell_metacharacters(tmp_path):
     """Regression: the subprocess must run with argv, not shell=True, so paths with
     spaces / semicolons / $(...) do not get interpreted by a shell."""
-    from pathlib import Path
-
-    import numpy as np
     from memray import Tracker
-
-    from mixins import MemTrackableMixin
 
     tricky_dir = tmp_path / "a b; echo pwned"
     tricky_dir.mkdir()
@@ -83,7 +78,7 @@ def test_get_memray_stats_accepts_paths_with_shell_metacharacters(tmp_path):
     stats = MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
     assert isinstance(stats, dict)
     assert "metadata" in stats
-    assert Path(stats_fp).is_file()
+    assert stats_fp.is_file()
 
 
 def test_decorators_and_profiling():

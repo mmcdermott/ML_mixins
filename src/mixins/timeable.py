@@ -48,7 +48,7 @@ class TimeableMixin:
                 "Did a subclass forget to call super().__init__()?"
             )
         if key not in self._timings:
-            raise KeyError(f"{key!r} not found in self._timings.")
+            raise KeyError(key)
 
     def _times_for(self, key: str) -> list[float]:
         """Return per-call durations (in seconds) recorded under ``key``.
@@ -68,7 +68,7 @@ class TimeableMixin:
         if not self._timings[key]:
             raise RuntimeError(f"Cannot check elapsed time for {key!r}: no open timer registered.")
         if self._END_TIME in self._timings[key][-1]:
-            raise RuntimeError(f"{key} is not currently being timed!")
+            raise RuntimeError(f"Cannot check elapsed time for {key!r}: timer is not currently running.")
         return time.time() - self._timings[key][-1][self._START_TIME]
 
     def _register_start(self, key: str) -> None:
@@ -79,8 +79,13 @@ class TimeableMixin:
         self._timings[key].append({self._START_TIME: time.time()})
 
     def _register_end(self, key: str) -> None:
-        """Close the most recent open timing entry for ``key`` with the current wall-clock time."""
-        if not hasattr(self, "_timings") or key not in self._timings or not self._timings[key]:
+        """Close the most recent open timing entry for ``key`` with the current wall-clock time.
+
+        Raises ``KeyError`` if ``key`` is unknown, and ``RuntimeError`` on lifecycle misuse (no open
+        timer under a known key, or last entry already closed).
+        """
+        self.__check_key_exists(key)
+        if not self._timings[key]:
             raise RuntimeError(f"Cannot end timing for {key!r}: no open timer registered.")
         if self._timings[key][-1].get(self._END_TIME, None) is not None:
             raise RuntimeError(f"Cannot end timing for {key!r}: last entry is already closed.")

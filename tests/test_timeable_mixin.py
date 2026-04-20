@@ -94,21 +94,19 @@ def test_misuse_raises_explicit_exceptions():
 
     T = TimeableMixin()
 
-    # Querying an unknown key raises KeyError, not AssertionError.
+    # Unknown-key access raises KeyError across all three query methods — consistent contract.
     with pytest.raises(KeyError):
         T._times_for("nope")
     with pytest.raises(KeyError):
         T._time_so_far("nope")
-
-    # Ending a timer that was never started raises RuntimeError.
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         T._register_end("nope")
 
-    # Ending a timer twice in a row raises RuntimeError.
+    # Lifecycle misuse on a known key raises RuntimeError.
     T._register_start("k")
     T._register_end("k")
     with pytest.raises(RuntimeError):
-        T._register_end("k")
+        T._register_end("k")  # already closed
 
     # _time_so_far on a closed timer raises RuntimeError.
     with pytest.raises(RuntimeError):

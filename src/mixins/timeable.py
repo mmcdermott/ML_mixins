@@ -42,8 +42,13 @@ class TimeableMixin:
         self._timings = kwargs.get("_timings", defaultdict(list))
 
     def __check_key_exists(self, key: str) -> None:
-        if not hasattr(self, "_timings") or key not in self._timings:
-            raise KeyError(f"{key} should exist in self._timings!")
+        if not hasattr(self, "_timings"):
+            raise AttributeError(
+                "TimeableMixin is not initialized: self._timings is missing. "
+                "Did a subclass forget to call super().__init__()?"
+            )
+        if key not in self._timings:
+            raise KeyError(f"{key!r} not found in self._timings.")
 
     def _times_for(self, key: str) -> list[float]:
         """Return per-call durations (in seconds) recorded under ``key``.
@@ -60,6 +65,8 @@ class TimeableMixin:
     def _time_so_far(self, key: str) -> float:
         """Return seconds elapsed since the most recent ``_register_start(key)`` on an open timer."""
         self.__check_key_exists(key)
+        if not self._timings[key]:
+            raise RuntimeError(f"Cannot check elapsed time for {key!r}: no open timer registered.")
         if self._END_TIME in self._timings[key][-1]:
             raise RuntimeError(f"{key} is not currently being timed!")
         return time.time() - self._timings[key][-1][self._START_TIME]

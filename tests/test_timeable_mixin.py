@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 import numpy as np
 
@@ -112,3 +113,19 @@ def test_misuse_raises_explicit_exceptions():
     # _time_so_far on a closed timer raises RuntimeError.
     with pytest.raises(RuntimeError):
         T._time_so_far("k")
+
+    # _time_so_far on a key whose timing list is empty also raises RuntimeError (guards against
+    # IndexError leaking through a pre-injected _timings=defaultdict(list)).
+    T2 = TimeableMixin(_timings=defaultdict(list))
+    T2._timings["empty"]  # noqa: B018 — materialize the empty list like a user might
+    with pytest.raises(RuntimeError):
+        T2._time_so_far("empty")
+
+    # Missing _timings (subclass forgot super().__init__()) surfaces as AttributeError.
+    class Broken(TimeableMixin):
+        def __init__(self):
+            pass  # no super().__init__(), so _timings is never set
+
+    b = Broken()
+    with pytest.raises(AttributeError):
+        b._times_for("anything")

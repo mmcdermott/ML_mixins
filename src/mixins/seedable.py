@@ -36,7 +36,12 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
             (``secrets.randbits(32)``) — **not** from the RNGs that this function is about to
             reseed. So two consecutive seedless calls produce unrelated seeds even if Python ``random``
             and ``numpy.random`` were just seeded to the same value. ``$PL_GLOBAL_SEED``, if set, takes
-            precedence over the OS-entropy draw (for Lightning worker compatibility).
+            precedence over the OS-entropy draw (for Lightning worker compatibility). Note that
+            ``$PL_GLOBAL_SEED`` is **not** unset after being read, so every subsequent seedless call
+            within the same process will pick up the same value — this matches Lightning's convention
+            (the env var is written once by the parent process and inherited by workers) but can
+            surprise callers who expect seedless calls to yield distinct seeds. In that case, pass
+            ``seed=None`` only after explicitly clearing the env var, or always pass an explicit seed.
         seed_engines: The engines to seed. If ``None``, seeds every registered engine (``random``,
             ``numpy``, and ``torch`` if installed).
 

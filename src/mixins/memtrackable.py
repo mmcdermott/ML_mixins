@@ -115,7 +115,7 @@ class MemTrackableMixin:
                 "Ensure the `memray` CLI is installed and available on PATH."
             ) from e
         try:
-            stats_text = memray_stats_fp.read_text()
+            stats_text = memray_stats_fp.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
             raise ValueError(f"Failed to read memray stats output at {memray_stats_fp}: {e}") from e
         try:

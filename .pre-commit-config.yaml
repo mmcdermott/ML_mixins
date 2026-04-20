@@ -1,11 +1,9 @@
 default_language_version:
   python: python3.12
 
-exclude: "docs/index.md|MIMIC-IV_Example/README.md|eICU_Example/README.md"
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       # list of supported hooks: https://pre-commit.com/hooks.html
       - id: trailing-whitespace
@@ -21,42 +19,42 @@ repos:
         args: [--maxkb, "800"]
 
   # python code formatting
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 25.1.0
     hooks:
       - id: black
         args: [--line-length, "110"]
 
   # python import sorting
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 6.0.1
     hooks:
       - id: isort
         args: ["--profile", "black", "--filter-files", "-o", "wandb"]
 
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.2.0
+    rev: v2.3.1
     hooks:
       - id: autoflake
         args: [--in-place, --remove-all-unused-imports]
 
   # python upgrading syntax to newer version
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: [--py311-plus]
 
   # python docstring formatting
-  - repo: https://github.com/myint/docformatter
-    rev: v1.7.5
+  - repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.7
     hooks:
       - id: docformatter
         args: [--in-place, --wrap-summaries=110, --wrap-descriptions=110]
 
   # python check (PEP8), programming errors and code complexity
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         args:
@@ -72,8 +70,8 @@ repos:
           ]
 
   # yaml formatting
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.6.2
     hooks:
       - id: prettier
         types: [yaml]
@@ -81,30 +79,28 @@ repos:
 
   # shell scripts linter
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.5
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
 
   # md formatting
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
+    rev: 0.7.22
     hooks:
       - id: mdformat
         args: ["--number"]
         additional_dependencies:
-          - mdformat-gfm
-          - mdformat-tables
-          - mdformat_frontmatter
-          - mdformat-black
-          - mdformat-config
-          - mdformat-shfmt
-          - mdformat-mkdocs
-          - mdformat-toc
-          - mdformat-admon
+          - mdformat-gfm==1.0.0
+          - mdformat-tables==1.0.0
+          - mdformat-frontmatter==2.0.10
+          - mdformat-black==0.1.1
+          - mdformat-config==0.2.1
+          - mdformat-toc==0.5.0
+          - mdformat-admon==2.1.1
 
   # word spelling linter
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.4.1
     hooks:
       - id: codespell
         args:
@@ -113,13 +109,13 @@ repos:
 
   # jupyter notebook cell output clearing
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.1
+    rev: 0.8.1
     hooks:
       - id: nbstripout
 
   # jupyter notebook linting
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
+    rev: 1.9.1
     hooks:
       - id: nbqa-black
         args: ["--line-length=110"]

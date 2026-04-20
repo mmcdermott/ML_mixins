@@ -81,6 +81,28 @@ def test_get_memray_stats_accepts_paths_with_shell_metacharacters(tmp_path):
     assert stats_fp.is_file()
 
 
+def test_get_memray_stats_raises_on_malformed_json(tmp_path, monkeypatch):
+    """Regression: if `memray stats` writes invalid JSON, surface a clear ValueError."""
+    import subprocess
+
+    import pytest
+
+    import mixins.memtrackable as memtrackable
+
+    tracker_fp = tmp_path / ".memray"
+    stats_fp = tmp_path / "memray_stats.json"
+    tracker_fp.touch()  # get past the FileNotFoundError guard
+
+    def fake_run(cmd, **_kw):
+        stats_fp.write_text("not-valid-json {")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
+
+    with pytest.raises(ValueError, match="Failed to parse memray stats JSON"):
+        MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+
+
 def test_decorators_and_profiling():
     M = MemTrackableDerived()
     M.decorated_takes_mem(mem_size_64b=16000)

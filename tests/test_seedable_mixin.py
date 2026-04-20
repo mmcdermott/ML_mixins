@@ -106,11 +106,6 @@ def test_responds_to_methods():
     T._last_seed("foo")
 
 
-# Note: `test_seeding_freezes_randomness`, `test_decorated_seeding_freezes_randomness`, and
-# `test_seeds_follow_consistent_sequence` previously lived here; they have moved into doctests on
-# `SeedableMixin`, `SeedableMixin.WithSeed`, and `README.md` where they double as documentation.
-
-
 def test_get_last_seed():
     T = SeedableDerived()
 

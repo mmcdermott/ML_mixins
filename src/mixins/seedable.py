@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import os
 import random
+import secrets
 from datetime import datetime
 
 import numpy as np
@@ -31,21 +32,24 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
     """A simple helper function to seed everything that needs to be seeded.
 
     Args:
-        seed: The seed to use. If ``None``, the value of ``$PL_GLOBAL_SEED`` is consulted first and used
-            verbatim if set, otherwise a random seed is drawn. Note that ``$PL_GLOBAL_SEED`` is **not**
-            unset after being read, so every subsequent seedless call within the same process will pick up
-            the same value. This matches Lightning's convention (the env var is written once by the parent
-            process and inherited by workers) but can surprise callers who expect seedless calls to yield
-            distinct seeds — in that case, pass ``seed=None`` only after explicitly clearing the env var,
-            or always pass an explicit seed.
-        seed_engines: The engines to seed. If ``None``, seeds every registered engine (``random``, ``numpy``,
-            and ``torch`` if installed).
+        seed: The seed to use. If ``None``, a fresh seed is chosen from OS entropy
+            (``secrets.randbits(32)``) — **not** from the RNGs that this function is about to
+            reseed. So two consecutive seedless calls produce unrelated seeds even if Python ``random``
+            and ``numpy.random`` were just seeded to the same value. ``$PL_GLOBAL_SEED``, if set, takes
+            precedence over the OS-entropy draw (for Lightning worker compatibility). Note that
+            ``$PL_GLOBAL_SEED`` is **not** unset after being read, so every subsequent seedless call
+            within the same process will pick up the same value — this matches Lightning's convention
+            (the env var is written once by the parent process and inherited by workers) but can
+            surprise callers who expect seedless calls to yield distinct seeds. In that case, pass
+            ``seed=None`` only after explicitly clearing the env var, or always pass an explicit seed.
+        seed_engines: The engines to seed. If ``None``, seeds every registered engine (``random``,
+            ``numpy``, and ``torch`` if installed).
 
     Returns:
         The seed that was used.
 
     Examples:
-        Seeding produces reproducible draws from both ``random`` and ``numpy``:
+        With an explicit seed, subsequent draws from ``random`` and ``numpy`` are reproducible:
 
         >>> seed_everything(0)
         0
@@ -55,6 +59,22 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
         0
         >>> random.randint(0, 10), np.random.randint(0, 10)
         (6, 5)
+
+        Without a seed, the contract is the opposite: the fallback is independent of the caller's
+        current RNG state. Reseeding ``random`` and ``numpy`` to a fixed value between two seedless
+        calls does **not** make them return the same seed — that's the point of drawing fresh
+        entropy. (Collisions are possible at 1/2**32 odds but vanishingly rare; we assert that the
+        two seeds are positive 32-bit ints rather than a specific equality to keep the doctest
+        deterministic.)
+
+        >>> seed_everything(0); a = seed_everything()
+        0
+        >>> seed_everything(0); b = seed_everything()
+        0
+        >>> 0 <= a < 2**32 and 0 <= b < 2**32
+        True
+        >>> isinstance(a, int) and isinstance(b, int)
+        True
 
         ``seed_engines`` restricts which RNGs get reseeded — the engines *not* listed keep advancing from
         their current state:
@@ -82,9 +102,10 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
         if "PL_GLOBAL_SEED" in os.environ:
             seed = int(os.environ["PL_GLOBAL_SEED"])
         else:
-            max_seed_value = np.iinfo(np.uint32).max
-            min_seed_value = np.iinfo(np.uint32).min
-            seed = np.random.randint(min_seed_value, max_seed_value)
+            # Draw from an entropy source that is independent of the RNGs this function reseeds —
+            # otherwise successive `seed_everything()` calls after a prior seeding would produce
+            # the same "fresh" seed.
+            seed = secrets.randbits(32)
 
     for s in seed_engines:
         _SEED_FUNCTIONS[s](seed)

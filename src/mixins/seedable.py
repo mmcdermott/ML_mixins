@@ -31,32 +31,43 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
     """A simple helper function to seed everything that needs to be seeded.
 
     Args:
-        seed: The seed to use. If None, a random seed is chosen.
+        seed: The seed to use. If ``None``, the value of ``$PL_GLOBAL_SEED`` is used if set, otherwise a
+            random seed is drawn.
+        seed_engines: The engines to seed. If ``None``, seeds every registered engine (``random``, ``numpy``,
+            and ``torch`` if installed).
 
     Returns:
         The seed that was used.
 
     Examples:
-        >>> random.seed(0)
-        >>> np.random.seed(0)
-        >>> random.randint(0, 10)
-        6
-        >>> random.randint(0, 10)
-        6
-        >>> np.random.randint(0, 10)
-        5
-        >>> np.random.randint(0, 10)
-        0
+        Seeding produces reproducible draws from both ``random`` and ``numpy``:
+
         >>> seed_everything(0)
         0
-        >>> random.randint(0, 10)
-        6
-        >>> random.randint(0, 10)
-        6
-        >>> np.random.randint(0, 10)
-        5
-        >>> np.random.randint(0, 10)
+        >>> random.randint(0, 10), np.random.randint(0, 10)
+        (6, 5)
+        >>> seed_everything(0)
         0
+        >>> random.randint(0, 10), np.random.randint(0, 10)
+        (6, 5)
+
+        ``seed_engines`` restricts which RNGs get reseeded — the engines *not* listed keep advancing from
+        their current state:
+
+        >>> _ = seed_everything(1)                           # reset both
+        >>> a_py, a_np = random.random(), np.random.random()
+        >>> _ = seed_everything(2, seed_engines={"random"})  # only reseed Python random
+        >>> b_py, b_np = random.random(), np.random.random()
+        >>> _ = seed_everything(1)                           # back to fully reset
+        >>> c_py, c_np = random.random(), np.random.random()
+        >>> a_py == c_py and a_np == c_np     # both engines match under the same full reset
+        True
+        >>> b_py == a_py                      # Python rng was reseeded to 2, so differs from run a
+        False
+        >>> b_np == a_np                      # numpy rng was NOT reseeded, but since seed_everything(2)
+        ...                                   # only touched random, numpy kept advancing from the state
+        ...                                   # seed_everything(1) left it in — not guaranteed equal here
+        False
     """
 
     if seed_engines is None:

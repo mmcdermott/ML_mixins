@@ -32,7 +32,9 @@ torch = ["torch"]
 addopts = [
   "--color=yes",
   "--doctest-modules",
+  "--doctest-glob=*.md",
 ]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
 
 [project.urls]
 "Homepage" = "https://github.com/mmcdermott/ML_mixins"

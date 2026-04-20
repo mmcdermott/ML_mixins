@@ -46,6 +46,10 @@ class TimeableMixin:
             raise KeyError(f"{key} should exist in self._timings!")
 
     def _times_for(self, key: str) -> list[float]:
+        """Return per-call durations (in seconds) recorded under ``key``.
+
+        Only completed (start + end) entries are returned; an in-flight timer is skipped.
+        """
         self.__check_key_exists(key)
         return [
             t[self._END_TIME] - t[self._START_TIME]
@@ -54,18 +58,21 @@ class TimeableMixin:
         ]
 
     def _time_so_far(self, key: str) -> float:
+        """Return seconds elapsed since the most recent ``_register_start(key)`` on an open timer."""
         self.__check_key_exists(key)
         if self._END_TIME in self._timings[key][-1]:
             raise RuntimeError(f"{key} is not currently being timed!")
         return time.time() - self._timings[key][-1][self._START_TIME]
 
     def _register_start(self, key: str) -> None:
+        """Open a new timing entry for ``key`` with the current wall-clock time."""
         if not hasattr(self, "_timings"):
             self._timings = defaultdict(list)
 
         self._timings[key].append({self._START_TIME: time.time()})
 
     def _register_end(self, key: str) -> None:
+        """Close the most recent open timing entry for ``key`` with the current wall-clock time."""
         if not hasattr(self, "_timings") or key not in self._timings or not self._timings[key]:
             raise RuntimeError(f"Cannot end timing for {key!r}: no open timer registered.")
         if self._timings[key][-1].get(self._END_TIME, None) is not None:
@@ -74,6 +81,10 @@ class TimeableMixin:
 
     @contextmanager
     def _time_as(self, key: str):
+        """Context manager that times the enclosed block under ``key``.
+
+        The timer is closed even if the block raises, unlike the bare ``TimeAs`` decorator.
+        """
         self._register_start(key)
         try:
             yield
@@ -83,6 +94,11 @@ class TimeableMixin:
     @staticmethod
     @doublewrap
     def TimeAs(fn, key: str | None = None):
+        """Decorator that times each call to ``fn``, storing durations under ``key`` (default:
+        ``fn.__name__``).
+
+        Use as ``@TimeAs`` or ``@TimeAs(key="custom")``. See ``_time_as`` for a context-manager equivalent.
+        """
         if key is None:
             key = fn.__name__
 
@@ -97,6 +113,7 @@ class TimeableMixin:
 
     @property
     def _duration_stats(self):
+        """Per key: ``(mean_seconds, count, std_or_None)``; ``std`` omitted for single-call keys."""
         out = {}
         for k in self._timings:
             arr = np.array(self._times_for(k))
@@ -104,6 +121,11 @@ class TimeableMixin:
         return out
 
     def _profile_durations(self, only_keys: set[str] | None = None):
+        """Render ``_duration_stats`` as a multi-line aligned string, with auto-selected units per key.
+
+        Rows are sorted ascending by total time (mean × count), so hotspots appear last. Pass ``only_keys``
+        to restrict to a subset.
+        """
         stats = {k: ((v, "sec"), n, s) for k, (v, n, s) in self._duration_stats.items()}
 
         if only_keys is not None:

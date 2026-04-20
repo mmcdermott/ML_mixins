@@ -81,8 +81,9 @@ class TimeableMixin:
     def _register_end(self, key: str) -> None:
         """Close the most recent open timing entry for ``key`` with the current wall-clock time.
 
-        Raises ``KeyError`` if ``key`` is unknown, and ``RuntimeError`` on lifecycle misuse (no open
-        timer under a known key, or last entry already closed).
+        Raises ``AttributeError`` if the mixin was not initialized and ``self._timings`` is missing,
+        ``KeyError`` if ``key`` is unknown, and ``RuntimeError`` on lifecycle misuse (no open timer
+        under a known key, or last entry already closed).
         """
         self.__check_key_exists(key)
         if not self._timings[key]:

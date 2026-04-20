@@ -102,15 +102,11 @@ class MemTrackableMixin:
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError(
-                f"`memray stats` failed for {memray_tracker_fp}:\n{e.stderr}"
-            ) from e
+            raise ValueError(f"`memray stats` failed for {memray_tracker_fp}:\n{e.stderr}") from e
         try:
             return json.loads(memray_stats_fp.read_text())
         except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Failed to parse memray stats JSON at {memray_stats_fp}"
-            ) from e
+            raise ValueError(f"Failed to parse memray stats JSON at {memray_stats_fp}") from e
 
     def __init__(self, *args, **kwargs):
         self._mem_stats = kwargs.get("_mem_stats", defaultdict(list))

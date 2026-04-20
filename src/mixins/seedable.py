@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import os
 import random
+import secrets
 from datetime import datetime
 
 import numpy as np
@@ -66,9 +67,10 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
         if "PL_GLOBAL_SEED" in os.environ:
             seed = int(os.environ["PL_GLOBAL_SEED"])
         else:
-            max_seed_value = np.iinfo(np.uint32).max
-            min_seed_value = np.iinfo(np.uint32).min
-            seed = np.random.randint(min_seed_value, max_seed_value)
+            # Draw from an entropy source that is independent of the RNGs this function reseeds —
+            # otherwise successive `seed_everything()` calls after a prior seeding would produce
+            # the same "fresh" seed.
+            seed = secrets.randbits(32)
 
     for s in seed_engines:
         _SEED_FUNCTIONS[s](seed)

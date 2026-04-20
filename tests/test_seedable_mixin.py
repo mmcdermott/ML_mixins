@@ -194,6 +194,20 @@ def test_seeds_follow_consistent_sequence():
     assert next_seeds_1 == next_seeds_2
 
 
+def test_seed_everything_fallback_is_independent_of_numpy_state():
+    """Regression: the no-arg fallback must not draw from the same RNG it is about to reseed."""
+    if "PL_GLOBAL_SEED" in os.environ:
+        del os.environ["PL_GLOBAL_SEED"]
+
+    np.random.seed(0)
+    a = seed_everything()
+    np.random.seed(0)
+    b = seed_everything()
+
+    # Before the fix this assertion failed — both calls drew from the same numpy state.
+    assert a != b, "seedless seed_everything() should produce fresh seeds across calls"
+
+
 def test_get_last_seed():
     T = SeedableDerived()
 

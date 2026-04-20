@@ -31,7 +31,15 @@ def seed_everything(seed: int | None = None, seed_engines: set[str] | None = Non
     """A simple helper function to seed everything that needs to be seeded.
 
     Args:
-        seed: The seed to use. If None, a random seed is chosen.
+        seed: The seed to use. If ``None``, the value of ``$PL_GLOBAL_SEED`` is consulted first and used
+            verbatim if set, otherwise a random seed is drawn. Note that ``$PL_GLOBAL_SEED`` is **not**
+            unset after being read, so every subsequent seedless call within the same process will pick up
+            the same value. This matches Lightning's convention (the env var is written once by the parent
+            process and inherited by workers) but can surprise callers who expect seedless calls to yield
+            distinct seeds — in that case, pass ``seed=None`` only after explicitly clearing the env var,
+            or always pass an explicit seed.
+        seed_engines: The engines to seed. If ``None``, seeds every registered engine (``random``, ``numpy``,
+            and ``torch`` if installed).
 
     Returns:
         The seed that was used.

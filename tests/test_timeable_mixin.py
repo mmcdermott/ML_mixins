@@ -127,3 +127,33 @@ def test_misuse_raises_explicit_exceptions():
     b = Broken()
     with pytest.raises(AttributeError):
         b._times_for("anything")
+
+
+def test_time_as_decorator_closes_timer_on_exception():
+    """Regression: a method raising inside @TimeAs must still close its timing entry."""
+
+    class T(TimeableMixin):
+        @TimeableMixin.TimeAs
+        def boom(self):
+            raise RuntimeError("oops")
+
+    t = T()
+    try:
+        t.boom()
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("Expected t.boom() to raise RuntimeError")
+
+    # The timer opened by @TimeAs must be closed so (a) _times_for returns the completed entry
+    # for the failed call and (b) subsequent calls don't see a stale in-flight entry.
+    # We only assert the entry exists; duration values can be negative under clock adjustments.
+    assert len(t._times_for("boom")) == 1
+
+    try:
+        t.boom()
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("Expected t.boom() to raise RuntimeError")
+    assert len(t._times_for("boom")) == 2

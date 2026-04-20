@@ -96,7 +96,8 @@ class TimeableMixin:
     def _time_as(self, key: str):
         """Context manager that times the enclosed block under ``key``.
 
-        The timer is closed even if the block raises, unlike the bare ``TimeAs`` decorator.
+        The timer is closed even if the block raises. ``TimeAs`` wraps decorated methods with this
+        same context manager, so the exception-safety guarantee applies to both entry points.
         """
         self._register_start(key)
         try:
@@ -117,10 +118,8 @@ class TimeableMixin:
 
         @functools.wraps(fn)
         def wrapper_timing(self, *args, **kwargs):
-            self._register_start(key=key)
-            out = fn(self, *args, **kwargs)
-            self._register_end(key=key)
-            return out
+            with self._time_as(key):
+                return fn(self, *args, **kwargs)
 
         return wrapper_timing
 

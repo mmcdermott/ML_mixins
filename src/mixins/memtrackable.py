@@ -66,7 +66,8 @@ class MemTrackableMixin:
             ...     print(stats['metadata']['peak_memory'])
             8000
 
-        If you run it on a tracker file that is malformed, it won't work.
+        If you run it on a tracker file that is malformed, it won't work — the underlying
+        ``memray stats`` error is surfaced in the ``ValueError`` rather than swallowed:
             >>> with tempfile.TemporaryDirectory() as tmpdir:
             ...     memray_tracker_fp = Path(tmpdir) / ".memray"
             ...     memray_stats_fp = Path(tmpdir) / "memray_stats.json"
@@ -74,7 +75,7 @@ class MemTrackableMixin:
             ...     MemTrackableMixin.get_memray_stats(memray_tracker_fp, memray_stats_fp)
             Traceback (most recent call last):
                 ...
-            ValueError: Failed to extract and parse memray stats file at ...
+            ValueError: `memray stats` failed for ...
 
         If you run it on a non-existent file, it won't work.
             >>> MemTrackableMixin.get_memray_stats(Path("non_existent.mem"), Path("non_existent.stats"))
@@ -85,12 +86,31 @@ class MemTrackableMixin:
         if not memray_tracker_fp.is_file():
             raise FileNotFoundError(f"Memray tracker file not found at {memray_tracker_fp}")
 
-        memray_stats_cmd = f"memray stats {memray_tracker_fp} --json -o {memray_stats_fp} -f"
         try:
-            subprocess.run(memray_stats_cmd, shell=True, check=True, capture_output=True)
+            subprocess.run(
+                [
+                    "memray",
+                    "stats",
+                    str(memray_tracker_fp),
+                    "--json",
+                    "-o",
+                    str(memray_stats_fp),
+                    "-f",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise ValueError(
+                f"`memray stats` failed for {memray_tracker_fp}:\n{e.stderr}"
+            ) from e
+        try:
             return json.loads(memray_stats_fp.read_text())
-        except Exception as e:
-            raise ValueError(f"Failed to extract and parse memray stats file at {memray_stats_fp}") from e
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                f"Failed to parse memray stats JSON at {memray_stats_fp}"
+            ) from e
 
     def __init__(self, *args, **kwargs):
         self._mem_stats = kwargs.get("_mem_stats", defaultdict(list))

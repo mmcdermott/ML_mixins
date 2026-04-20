@@ -62,6 +62,30 @@ def test_context_manager():
     np.testing.assert_almost_equal(mem_used, 64 * 10000, decimal=1)
 
 
+def test_get_memray_stats_accepts_paths_with_shell_metacharacters(tmp_path):
+    """Regression: the subprocess must run with argv, not shell=True, so paths with
+    spaces / semicolons / $(...) do not get interpreted by a shell."""
+    import numpy as np
+    from pathlib import Path
+
+    from memray import Tracker
+
+    from mixins import MemTrackableMixin
+
+    tricky_dir = tmp_path / "a b; echo pwned"
+    tricky_dir.mkdir()
+    tracker_fp = tricky_dir / ".memray"
+    stats_fp = tricky_dir / "memray_stats.json"
+
+    with Tracker(tracker_fp, follow_fork=True):
+        np.ones((1000,), dtype=np.float64)
+
+    stats = MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+    assert isinstance(stats, dict)
+    assert "metadata" in stats
+    assert Path(stats_fp).is_file()
+
+
 def test_decorators_and_profiling():
     M = MemTrackableDerived()
     M.decorated_takes_mem(mem_size_64b=16000)

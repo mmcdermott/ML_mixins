@@ -53,9 +53,9 @@ class MemTrackableMixin:
 
         Raises:
             FileNotFoundError: If the memray tracker file is not found.
-            ValueError: If the ``memray stats`` subprocess fails (e.g. malformed tracker file,
-                missing ``memray`` binary) — the underlying stderr is surfaced in the message — or
-                if the resulting stats JSON cannot be parsed.
+            ValueError: If the ``memray stats`` subprocess fails (malformed tracker file, surfaced
+                via the subprocess's stderr), if the ``memray`` CLI is missing from PATH or
+                otherwise cannot be launched, or if the resulting stats JSON cannot be parsed.
 
         Examples:
             >>> import tempfile
@@ -106,6 +106,12 @@ class MemTrackableMixin:
         except subprocess.CalledProcessError as e:
             stderr = (e.stderr or "").strip() or "No stderr output."
             raise ValueError(f"`memray stats` failed for {memray_tracker_fp}:\n{stderr}") from e
+        except OSError as e:
+            # Raised by subprocess.run itself when the executable is missing or unlaunchable.
+            raise ValueError(
+                f"Failed to launch `memray stats` for {memray_tracker_fp}: {e}. "
+                "Ensure the `memray` CLI is installed and available on PATH."
+            ) from e
         try:
             return json.loads(memray_stats_fp.read_text())
         except json.JSONDecodeError as e:

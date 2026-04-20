@@ -85,8 +85,6 @@ def test_get_memray_stats_raises_on_malformed_json(tmp_path, monkeypatch):
     """Regression: if `memray stats` writes invalid JSON, surface a clear ValueError."""
     import subprocess
 
-    import pytest
-
     import mixins.memtrackable as memtrackable
 
     tracker_fp = tmp_path / ".memray"
@@ -99,8 +97,32 @@ def test_get_memray_stats_raises_on_malformed_json(tmp_path, monkeypatch):
 
     monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
 
-    with pytest.raises(ValueError, match="Failed to parse memray stats JSON"):
+    try:
         MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+        raise AssertionError("Should have raised a ValueError!")
+    except ValueError as e:
+        assert "Failed to parse memray stats JSON" in str(e)
+
+
+def test_get_memray_stats_raises_when_memray_binary_missing(tmp_path, monkeypatch):
+    """Regression: a missing memray binary surfaces as ValueError, not a leaked FileNotFoundError."""
+    import mixins.memtrackable as memtrackable
+
+    tracker_fp = tmp_path / ".memray"
+    stats_fp = tmp_path / "memray_stats.json"
+    tracker_fp.touch()  # get past the outer FileNotFoundError guard
+
+    def fake_run(_cmd, **_kw):
+        raise FileNotFoundError(2, "No such file or directory", "memray")
+
+    monkeypatch.setattr(memtrackable.subprocess, "run", fake_run)
+
+    try:
+        MemTrackableMixin.get_memray_stats(tracker_fp, stats_fp)
+        raise AssertionError("Should have raised a ValueError!")
+    except ValueError as e:
+        assert "Failed to launch `memray stats`" in str(e)
+        assert "PATH" in str(e)
 
 
 def test_decorators_and_profiling():

@@ -80,7 +80,8 @@ class TimeableMixin:
     def _time_as(self, key: str):
         """Context manager that times the enclosed block under ``key``.
 
-        The timer is closed even if the block raises, unlike the bare ``TimeAs`` decorator.
+        The timer is closed even if the block raises. ``TimeAs`` wraps decorated methods with this
+        same context manager, so the exception-safety guarantee applies to both entry points.
         """
         self._register_start(key)
         try:

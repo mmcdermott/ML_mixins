@@ -92,8 +92,32 @@ class SeedableMixin:
 
     This seeding can be used to ensure reproducibility in experiments, both in individual examples with an
     integral seed or in a stochastic process both at a per-event level and at a whole process level by seeding
-    with `None`, in which case a new seed is chosen for each event in the process based on the prior seed and
-    stored.
+    with ``None``, in which case a new seed is chosen for each event in the process based on the prior seed
+    and stored.
+
+    Examples:
+        Calling ``_seed(n)`` twice with the same ``n`` freezes subsequent random draws to the same sequence:
+
+        >>> class M(SeedableMixin):
+        ...     def gen(self):
+        ...         return (random.random(), np.random.rand())
+        >>> m = M()
+        >>> _ = m._seed(1); a1, a2 = m.gen(), m.gen()
+        >>> _ = m._seed(1); b1, b2 = m.gen(), m.gen()
+        >>> a1 == b1 and a2 == b2
+        True
+        >>> a1 != a2                 # repeated draws within one seeded run still differ
+        True
+
+        With ``_seed()`` (no arg), the new seed is drawn from the current random state — so the *sequence*
+        of seeds is itself reproducible once the chain has been seeded:
+
+        >>> _ = m._seed(1)
+        >>> chain_a = [m._seed() for _ in range(3)]
+        >>> _ = m._seed(1)
+        >>> chain_b = [m._seed() for _ in range(3)]
+        >>> chain_a == chain_b
+        True
     """
 
     def __init__(self, *args, **kwargs):

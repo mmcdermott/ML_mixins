@@ -113,85 +113,9 @@ def test_responds_to_methods():
     T._last_seed("foo")
 
 
-def test_seeding_freezes_randomness():
-    T = SeedableDerived()
-
-    unseeded_1 = T.gen_random_num()
-    unseeded_2 = T.gen_random_num()
-
-    # Without seeding, repeated calls should be different.
-    assert unseeded_1 != unseeded_2, "Unseeded calls should be different."
-
-    T._seed(1)
-    seeded_1_1 = T.gen_random_num()
-    seeded_2_1 = T.gen_random_num()
-
-    # Even if I seeded at the start, repeated calls should still be different.
-    assert seeded_1_1 != seeded_2_1, "Seeded calls should be different when called repeatedly."
-
-    T._seed(1)
-    seeded_1_2 = T.gen_random_num()
-    seeded_2_2 = T.gen_random_num()
-
-    # Since I seeded again, they should match the prior sequence.
-    assert seeded_1_1 == seeded_1_2
-    assert seeded_2_1 == seeded_2_2
-
-
-def test_decorated_seeding_freezes_randomness():
-    T = SeedableDerived()
-
-    unseeded_1 = T.decorated_gen_random_num()
-    unseeded_2 = T.decorated_gen_random_num()
-
-    # Without seeding, repeated calls should be different.
-    assert unseeded_1 != unseeded_2
-
-    seeded_1_1 = T.decorated_gen_random_num(seed=1)
-    seeded_2_1 = T.decorated_gen_random_num(seed=2)
-
-    # Even if I seeded at the start, repeated calls should still be different.
-    assert seeded_1_1 != seeded_2_1
-
-    seeded_1_2 = T.decorated_gen_random_num(seed=1)
-    seeded_2_2 = T.decorated_gen_random_num(seed=2)
-
-    # Since they are seeded, they should match the prior sequence.
-    assert seeded_1_1 == seeded_1_2
-    assert seeded_2_1 == seeded_2_2
-
-    # Now we want to make sure the seeding is consistent even interrupted.
-
-    T._seed(0)
-    seeded_1_3 = T.decorated_gen_random_num(seed=1)
-    T._seed(10)
-    seeded_2_3 = T.decorated_gen_random_num(seed=2)
-
-    assert seeded_1_1 == seeded_1_3
-    assert seeded_2_1 == seeded_2_3
-
-
-def test_seeds_follow_consistent_sequence():
-    T = SeedableDerived()
-
-    unseeded_seq = [T._seed() for i in range(5)]
-
-    seed_1 = T._seed(1)
-
-    # seed_1 should be 1 given I passed a seed in:
-    assert seed_1 == 1
-
-    next_seeds_1 = [T._seed() for i in range(5)]
-
-    # These should differ from the unseeded sequence of seeds
-    assert unseeded_seq != next_seeds_1
-
-    T._seed(1)
-
-    next_seeds_2 = [T._seed() for i in range(5)]
-
-    # The sequence of seeds should be the same here.
-    assert next_seeds_1 == next_seeds_2
+# Note: `test_seeding_freezes_randomness`, `test_decorated_seeding_freezes_randomness`, and
+# `test_seeds_follow_consistent_sequence` previously lived here; they have moved into doctests on
+# `SeedableMixin`, `SeedableMixin.WithSeed`, and `README.md` where they double as documentation.
 
 
 def test_get_last_seed():
